@@ -1,2 +1,3 @@
 # pnpm package age policy: minimum package age of 2 days (2880 minutes)
 minimumReleaseAge: 2880
+confirmModulesPurge: false

@@ -3,21 +3,22 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Enable pnpm with age policy
+ENV CI=true
 RUN corepack enable && corepack prepare pnpm@11.18.0 --activate
 
-COPY package.json pnpm-workspace.yaml* ./
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 RUN pnpm install --no-frozen-lockfile
 
-# Builder stage: Static Export for GitHub Pages / Nginx
+# Builder stage: Static Export for Nginx
 FROM node:22-alpine AS builder
 WORKDIR /app
+
+ENV CI=true
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN corepack enable && corepack prepare pnpm@11.18.0 --activate
 
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
 # Production static runner stage using lightweight Nginx
