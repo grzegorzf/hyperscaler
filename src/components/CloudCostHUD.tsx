@@ -12,11 +12,15 @@ import {
   Network,
   Layers,
   Sparkles,
+  Scale,
+  Leaf,
 } from "lucide-react";
+import { calculateCarbonFootprint } from "@/lib/simulation/carbonFootprint";
 
 interface CloudCostHUDProps {
   provider: CloudProvider;
   onProviderChange: (provider: CloudProvider) => void;
+  onOpenArbitrage?: () => void;
   state: ClusterState;
   className?: string;
 }
@@ -24,6 +28,7 @@ interface CloudCostHUDProps {
 export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
   provider,
   onProviderChange,
+  onOpenArbitrage,
   state,
   className = "",
 }) => {
@@ -37,6 +42,15 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
     state.scalingMode,
     state.totalNodes,
     coresPerTower
+  );
+
+  const carbon = calculateCarbonFootprint(
+    state.trafficRps,
+    state.edgeCacheHitRate,
+    state.scalingMode,
+    state.totalNodes,
+    coresPerTower,
+    costs.monthlyTotalGb
   );
 
   // Styling accents based on active cloud provider
@@ -78,23 +92,36 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
         </div>
 
         {/* The 3-way Cloud Switch */}
-        <div className="flex items-center p-0.5 rounded-lg bg-black/40 border border-slate-700/50">
-          {(["AWS", "GCP", "AZURE"] as const).map((p) => {
-            const isActive = provider === p;
-            return (
-              <button
-                key={p}
-                onClick={() => onProviderChange(p)}
-                className={`px-3 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all duration-150 ${
-                  isActive
-                    ? `${providerTheme.activeBg} border`
-                    : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
-                }`}
-              >
-                {p}
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2">
+          {onOpenArbitrage && (
+            <button
+              onClick={onOpenArbitrage}
+              className="text-[9px] px-2 py-1 rounded-md bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all"
+              title="Open Side-by-Side Multi-Cloud Arbitrage Comparison"
+            >
+              <Scale className="w-3 h-3" />
+              <span>Compare</span>
+            </button>
+          )}
+
+          <div className="flex items-center p-0.5 rounded-lg bg-black/40 border border-slate-700/50">
+            {(["AWS", "GCP", "AZURE"] as const).map((p) => {
+              const isActive = provider === p;
+              return (
+                <button
+                  key={p}
+                  onClick={() => onProviderChange(p)}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all duration-150 ${
+                    isActive
+                      ? `${providerTheme.activeBg} border`
+                      : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
+                  }`}
+                >
+                  {p}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -212,6 +239,9 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
             {/* Scale & Traffic Summary Footnote */}
             <div className="mt-1 pt-1.5 border-t border-slate-800 text-[9px] text-slate-500 flex items-center justify-between">
               <span>Traffic: ~{costs.monthlyRequestsBillion}B req/mo</span>
+              <span className="flex items-center gap-1 text-emerald-400 font-semibold" title={`${carbon.ecoScoreLabel} (${carbon.monthlyKgCo2e} kg CO2e/mo)`}>
+                <Leaf className="w-2.5 h-2.5 text-emerald-400" /> Eco: {carbon.ecoScore}
+              </span>
               <span>Bandwidth: ~{costs.monthlyTotalGb.toLocaleString()} GB</span>
             </div>
           </div>

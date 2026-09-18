@@ -3,13 +3,16 @@
 import React, { useState } from "react";
 import type { ClusterState } from "@/hooks/useSimulationStream";
 import type { CloudProvider } from "@/lib/simulation/cloudCosts";
-import { Sliders, BarChart3, Cloud, Flame, X, ChevronUp } from "lucide-react";
+import type { ArchitectureScenario } from "@/lib/simulation/scenarios";
+import { Sliders, BarChart3, Cloud, Flame, X, ChevronUp, Scale, FileText } from "lucide-react";
 import { TrafficStormSlider } from "./TrafficStormSlider";
 import { CdnSlider } from "./CdnSlider";
 import { ScalingControl } from "./ScalingControl";
 import { ChaosControl } from "./ChaosControl";
 import { TelemetryHUD } from "./TelemetryHUD";
 import { CloudCostHUD } from "./CloudCostHUD";
+import { ScenarioSelector } from "./ScenarioSelector";
+import { TelemetrySparklines } from "./TelemetrySparklines";
 
 export interface MobileDrawerProps {
   state: ClusterState;
@@ -26,6 +29,10 @@ export interface MobileDrawerProps {
   onChaosToggle: (active: boolean) => void;
   cloudProvider: CloudProvider;
   onProviderChange: (provider: CloudProvider) => void;
+  onOpenArbitrage: () => void;
+  onOpenExportReport: () => void;
+  onSelectScenario: (scenario: ArchitectureScenario) => void;
+  hourlyBurnRate: number;
 }
 
 type MobileTab = "NONE" | "CONTROLS" | "TELEMETRY" | "COSTS";
@@ -40,6 +47,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onChaosToggle,
   cloudProvider,
   onProviderChange,
+  onOpenArbitrage,
+  onOpenExportReport,
+  onSelectScenario,
+  hourlyBurnRate,
 }) => {
   const [activeTab, setActiveTab] = useState<MobileTab>("NONE");
 
@@ -171,10 +182,45 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               </button>
             </div>
 
+            {/* Quick Action Matrix & Report Buttons */}
+            <div className="grid grid-cols-2 gap-2 mb-3">
+              <button
+                onClick={() => {
+                  setActiveTab("NONE");
+                  onOpenArbitrage();
+                }}
+                className="min-h-[44px] py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-[11px] font-bold flex items-center justify-center gap-2 touch-manipulation transition-all"
+              >
+                <Scale className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Compare Clouds</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab("NONE");
+                  onOpenExportReport();
+                }}
+                className="min-h-[44px] py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] font-bold flex items-center justify-center gap-2 touch-manipulation transition-all"
+              >
+                <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export Spec (.md)</span>
+              </button>
+            </div>
+
             {/* Drawer Body with smooth scrolling */}
             <div className="overflow-y-auto pr-1 flex flex-col gap-3.5 pb-6">
               {activeTab === "CONTROLS" && (
                 <div className="flex flex-col gap-3">
+                  {/* Predefined Architecture Scenario Presets */}
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-mono">
+                      Architecture Scenario Preset
+                    </span>
+                    <ScenarioSelector
+                      onSelectScenario={onSelectScenario}
+                      className="w-full"
+                    />
+                  </div>
+
                   <TrafficStormSlider
                     trafficRps={state.trafficRps}
                     multiplier={trafficMultiplier}
@@ -206,6 +252,11 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                     history={throughputHistory}
                     className="w-full"
                   />
+                  <TelemetrySparklines
+                    state={state}
+                    hourlyBurnRate={hourlyBurnRate}
+                    className="w-full"
+                  />
                   {/* Legend inside mobile telemetry */}
                   <div className="glass-panel rounded-xl px-4 py-3 border border-cyan-500/20 flex flex-wrap items-center justify-between gap-3 text-[10px] font-mono text-slate-400">
                     <div className="flex items-center gap-2">
@@ -229,6 +280,10 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   <CloudCostHUD
                     provider={cloudProvider}
                     onProviderChange={onProviderChange}
+                    onOpenArbitrage={() => {
+                      setActiveTab("NONE");
+                      onOpenArbitrage();
+                    }}
                     state={state}
                     className="w-full max-w-none"
                   />
