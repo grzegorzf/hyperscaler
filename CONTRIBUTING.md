@@ -8,7 +8,7 @@ Thank you for your interest in contributing to **Hyperscaler**! We welcome bug r
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/<your-username>/hyperscaler.git
+   git clone https://github.com/grzegorzf/hyperscaler.git
    cd hyperscaler
    ```
 
@@ -21,21 +21,26 @@ Thank you for your interest in contributing to **Hyperscaler**! We welcome bug r
    ```bash
    pnpm dev
    ```
-   Open [http://localhost:3000](http://localhost:3000) to view the simulator.
+   Open [http://localhost:3000](http://localhost:3000) (or specified port) to view the simulator.
 
 ---
 
-## 🧪 Testing Guidelines
+## 🧪 Testing & Validation Guidelines
 
-Before submitting a pull request, ensure all automated tests pass:
+Before submitting a pull request, ensure all automated tests and type checks pass cleanly:
 
 ```bash
-npm test
-# or
-node --test --experimental-strip-types tests/**/*.test.ts
+# Run automated test suite (all 47 tests across 10 suites)
+pnpm test
+
+# Run TypeScript static typecheck
+pnpm typecheck
+
+# Verify production static build
+pnpm build
 ```
 
-If you add new math, layout algorithms, or state transitions, please include corresponding unit tests in `tests/`.
+If you add new simulation math, layout algorithms, FinOps calculations, or UI state transitions, please include corresponding unit tests in `tests/`.
 
 ---
 

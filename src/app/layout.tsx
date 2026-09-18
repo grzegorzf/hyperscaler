@@ -2,12 +2,18 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Hyperscaler | Holographic Cloud Architecture Simulator",
+  metadataBase: new URL("https://grzegorzf.github.io/hyperscaler"),
+  title: "Hyperscaler | Holographic Cloud Architecture & FinOps Simulator",
   description:
-    "Interactive 60 FPS visual simulator comparing Horizontal Auto-Scaling vs Vertical Scaling with live queuing theory, Little's Law, Edge CDN caching, and Chaos Monkey.",
+    "Interactive 60 FPS visual simulator comparing Horizontal Auto-Scaling vs Vertical Scaling with live queuing theory, Multi-Cloud AWS/GCP/Azure cost arbitrage, 99.99% SLO tracking, and Chaos Monkey.",
   keywords: [
     "hyperscaler",
     "cloud simulator",
+    "finops",
+    "aws pricing",
+    "gcp pricing",
+    "azure pricing",
+    "cloud arbitrage",
     "auto-scaling",
     "load balancing",
     "queuing theory",
@@ -16,25 +22,27 @@ export const metadata: Metadata = {
     "vertical scaling",
     "edge cdn",
     "canvas 60fps",
+    "slo tracker",
   ],
-  authors: [{ name: "Antigravity Engineering" }],
+  authors: [{ name: "Grzegorz Forysiak", url: "https://github.com/grzegorzf" }],
   openGraph: {
-    title: "Hyperscaler | Holographic Cloud Architecture Simulator",
+    title: "Hyperscaler | Holographic Cloud Architecture & FinOps Simulator",
     description:
-      "Interactive 60 FPS visual simulator comparing Horizontal Auto-Scaling vs Vertical Scaling with live queuing theory, Edge CDN caching, and Chaos Monkey.",
+      "Interactive 60 FPS visual simulator comparing Horizontal Auto-Scaling vs Vertical Scaling with live queuing theory, Multi-Cloud AWS/GCP/Azure cost arbitrage, and Chaos Monkey.",
     type: "website",
+    url: "https://grzegorzf.github.io/hyperscaler",
     locale: "en_US",
     siteName: "Hyperscaler Simulator",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Hyperscaler | Holographic Cloud Architecture Simulator",
+    title: "Hyperscaler | Holographic Cloud Architecture & FinOps Simulator",
     description:
       "Interactive 60 FPS visual simulator comparing Horizontal Auto-Scaling vs Vertical Scaling with live queuing theory and packet dynamics.",
   },
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "./icon.svg",
+    apple: "./icon.svg",
   },
 };
 

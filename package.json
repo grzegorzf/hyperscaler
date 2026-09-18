@@ -1,13 +1,38 @@
 {
   "name": "hyperscaler-frontend",
   "version": "1.0.0",
+  "description": "Interactive 3D Holographic Cloud Architecture Simulator & Multi-Cloud FinOps Decision Platform",
+  "author": "Grzegorz Forysiak",
+  "homepage": "https://grzegorzf.github.io/hyperscaler",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/grzegorzf/hyperscaler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/grzegorzf/hyperscaler/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "cloud",
+    "finops",
+    "aws",
+    "gcp",
+    "azure",
+    "simulator",
+    "queuing-theory",
+    "3d-visualization",
+    "kubernetes",
+    "nextjs",
+    "react",
+    "typescript"
+  ],
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
     "test": "node --test --experimental-strip-types --import ./tests/loader.mjs tests/*.test.ts"
   },
   "dependencies": {

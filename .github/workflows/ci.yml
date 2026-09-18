@@ -1,24 +1,18 @@
-name: Deploy Hyperscaler to GitHub Pages
+name: CI Quality Gate
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
+  pull_request:
+    branches: [main]
 
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  validate:
+    name: Typecheck, Test & Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -57,17 +51,5 @@ jobs:
       - name: Run automated test suite
         run: pnpm test
 
-      - name: Build static export
+      - name: Verify static production export
         run: pnpm build
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
