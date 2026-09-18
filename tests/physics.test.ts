@@ -37,17 +37,17 @@ describe("Physics & Queuing Math", () => {
   });
 
   it("scales particle pool directly with traffic volume", () => {
-    // Min bound (0.2x traffic ~5k RPS) -> 35 particles
+    // Min bound (0.2x traffic ~5k RPS) -> 6 particles (calm trickle)
     const minPool = calculateTargetParticlePool(5000);
-    assert.strictEqual(minPool, 35);
+    assert.strictEqual(minPool, 6);
 
-    // Baseline (1.0x traffic = 25k RPS) -> 100 particles (35 + 0.8 * 80)
+    // Baseline (1.0x traffic = 25k RPS) -> 22 particles (clean rhythmic stream)
     const basePool = calculateTargetParticlePool(25000);
-    assert.strictEqual(basePool, 99); // Math.round(35 + 0.8 * 80) = 99
+    assert.strictEqual(basePool, 22);
 
-    // High traffic (5.0x traffic = 125k RPS) -> 419 particles
+    // High traffic (5.0x traffic = 125k RPS) -> 142 particles (laser storm)
     const highPool = calculateTargetParticlePool(125000);
-    assert.strictEqual(highPool, 419);
+    assert.strictEqual(highPool, 142);
 
     // Particle pool is strictly increasing with traffic
     assert.ok(highPool > basePool);

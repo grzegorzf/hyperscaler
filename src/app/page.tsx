@@ -9,6 +9,8 @@ import { ScalingControl } from "@/components/ScalingControl";
 import { CdnSlider } from "@/components/CdnSlider";
 import { ChaosControl } from "@/components/ChaosControl";
 import { NodeInspectorModal } from "@/components/NodeInspectorModal";
+import { CloudCostHUD } from "@/components/CloudCostHUD";
+import type { CloudProvider } from "@/lib/simulation/cloudCosts";
 
 export default function HyperscalerPage() {
   const {
@@ -22,6 +24,7 @@ export default function HyperscalerPage() {
   } = useSimulationStream();
 
   const [selectedNode, setSelectedNode] = useState<ServerNode | null>(null);
+  const [cloudProvider, setCloudProvider] = useState<CloudProvider>("AWS");
 
   // Handle traffic multiplier adjustment
   const handleMultiplierChange = (mult: number) => {
@@ -86,6 +89,25 @@ export default function HyperscalerPage() {
               {state.scalingMode === "HORIZONTAL" ? "HORIZONTAL MESH" : "VERTICAL BOOST"}
             </span>
           </div>
+
+          <div className="w-[1px] h-6 bg-cyan-500/20" />
+
+          <div className="flex flex-col items-end">
+            <span className="text-[9px] text-slate-400 uppercase tracking-wider">
+              Cloud Target
+            </span>
+            <span
+              className={`font-bold ${
+                cloudProvider === "AWS"
+                  ? "text-amber-400 glow-amber"
+                  : cloudProvider === "GCP"
+                  ? "text-blue-400"
+                  : "text-sky-400 glow-cyan"
+              }`}
+            >
+              {cloudProvider}
+            </span>
+          </div>
         </div>
       </header>
 
@@ -94,8 +116,15 @@ export default function HyperscalerPage() {
         {/* The 60 FPS Canvas Engine */}
         <HolographicCanvas state={state} onSelectNode={setSelectedNode} />
 
-        {/* Top-Right Telemetry HUD */}
-        <TelemetryHUD state={state} history={throughputHistory} />
+        {/* Top-Right Telemetry & Cost Modeling Deck */}
+        <div className="absolute top-5 right-6 z-20 flex flex-col items-end gap-3 pointer-events-auto">
+          <TelemetryHUD state={state} history={throughputHistory} />
+          <CloudCostHUD
+            provider={cloudProvider}
+            onProviderChange={setCloudProvider}
+            state={state}
+          />
+        </div>
 
         {/* Left Interactive Control Dock */}
         <div className="absolute bottom-6 left-6 z-20 flex flex-col gap-3 pointer-events-auto">

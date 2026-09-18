@@ -19,11 +19,13 @@ export function spawnParticles(
     particles.splice(0, particles.length - targetParticlePool);
   }
 
-  // Calculate how many particles to spawn this frame
-  const neededSpawn = Math.min(
-    Math.max(1, Math.ceil((targetParticlePool - particles.length) * 0.2) + Math.ceil(mult * 2)),
-    24
-  );
+  const deficit = targetParticlePool - particles.length;
+  if (deficit <= 0) return;
+
+  // Pace spawning smoothly: at mult <= 1.0, spawn at most 1 packet per frame
+  // At higher traffic multipliers, allow spawning 2-4 packets per frame
+  const maxSpawnThisFrame = mult >= 4.0 ? 4 : mult >= 2.0 ? 2 : 1;
+  const neededSpawn = Math.min(deficit, maxSpawnThisFrame);
 
   for (let i = 0; i < neededSpawn; i++) {
     if (particles.length >= targetParticlePool) break;
@@ -33,7 +35,8 @@ export function spawnParticles(
     const type = isError ? "error" : isHit ? "hit" : "miss";
     const color = type === "hit" ? "#00f0ff" : type === "miss" ? "#f59e0b" : "#ef4444";
 
-    const startYOffset = (Math.random() - 0.5) * 60;
+    // Clean, tight emission aligned with conduits
+    const startYOffset = (Math.random() - 0.5) * 18;
     const cdnIdx = Math.floor(Math.random() * layout.cdnPops.length);
     const nodeIdx =
       state.nodes.length > 0 ? Math.floor(Math.random() * state.nodes.length) : 0;

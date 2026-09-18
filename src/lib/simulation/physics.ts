@@ -23,7 +23,12 @@ export function calculateOriginTraffic(trafficRps: number, cacheHitRate: number)
  */
 export function calculateTargetParticlePool(trafficRps: number): number {
   const mult = Math.max(0.2, trafficRps / BASE_TRAFFIC_RPS);
-  return Math.round(35 + (mult - 0.2) * 80);
+  if (mult <= 1.0) {
+    // 0.2x -> 6 particles (calm trickle), 1.0x -> 22 particles (clean rhythmic stream)
+    return Math.round(6 + (mult - 0.2) * 20);
+  }
+  // 1.0x -> 22 particles, 2.5x -> 67 particles (busy), 5.0x -> 142 particles (dense torrent)
+  return Math.round(22 + (mult - 1.0) * 30);
 }
 
 /**

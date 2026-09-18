@@ -6,9 +6,10 @@ import { ClusterState } from "@/hooks/useSimulationStream";
 interface TelemetryHUDProps {
   state: ClusterState;
   history: number[];
+  className?: string;
 }
 
-export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history }) => {
+export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, className = "" }) => {
   const isHealthy = state.systemHealth === "NOMINAL";
   const isDegraded = state.systemHealth === "DEGRADED";
 
@@ -26,9 +27,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history }) =>
     .join(" ");
 
   return (
-    <div className="absolute top-5 right-6 z-20 flex flex-col gap-3 pointer-events-auto">
-      {/* Top Main Telemetry Cluster */}
-      <div className="glass-panel rounded-xl px-5 py-4 border border-cyan-500/30 flex items-center gap-6 text-xs font-mono">
+    <div className={`glass-panel rounded-xl px-5 py-4 border border-cyan-500/30 flex items-center gap-6 text-xs font-mono pointer-events-auto ${className}`}>
         {/* 1. Region Latency */}
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-400 tracking-wider uppercase">Region Latency</span>
@@ -149,6 +148,5 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history }) =>
           </span>
         </div>
       </div>
-    </div>
   );
 };
