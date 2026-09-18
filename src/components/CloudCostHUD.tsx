@@ -16,6 +16,9 @@ import {
   Leaf,
 } from "lucide-react";
 import { calculateCarbonFootprint } from "@/lib/simulation/carbonFootprint";
+import { triggerHaptic } from "@/lib/browser/webApis";
+import { safeStartViewTransition } from "@/lib/browser/viewTransitions";
+import { useMouseSpotlight } from "@/hooks/useMouseSpotlight";
 
 interface CloudCostHUDProps {
   provider: CloudProvider;
@@ -33,6 +36,7 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
   className = "",
 }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
+  const spotlight = useMouseSpotlight();
 
   const coresPerTower = state.nodes[0]?.cpuCores || 16;
   const costs: CloudCostBreakdown = calculateCloudCosts(
@@ -52,6 +56,14 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
     coresPerTower,
     costs.monthlyTotalGb
   );
+
+  const handleProviderSelect = (p: CloudProvider) => {
+    if (p === provider) return;
+    triggerHaptic("medium");
+    safeStartViewTransition(() => {
+      onProviderChange(p);
+    });
+  };
 
   // Styling accents based on active cloud provider
   const providerTheme = {
@@ -80,7 +92,9 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
 
   return (
     <div
-      className={`glass-panel rounded-xl px-4 py-3.5 md:px-5 md:py-4 border ${providerTheme.border} flex flex-col gap-3 font-mono text-xs w-full max-w-[420px] transition-all duration-300 pointer-events-auto ${className}`}
+      onMouseMove={spotlight.onMouseMove}
+      onMouseLeave={spotlight.onMouseLeave}
+      className={`glass-panel gpu-spotlight cyber-hud-notch rounded-xl px-4 py-3.5 md:px-5 md:py-4 border ${providerTheme.border} flex flex-col gap-3 font-mono text-xs w-full max-w-[420px] transition-all duration-300 pointer-events-auto ${className}`}
     >
       {/* 1. Provider Switch Bar */}
       <div className="flex items-center justify-between">
@@ -95,8 +109,11 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
         <div className="flex items-center gap-2">
           {onOpenArbitrage && (
             <button
-              onClick={onOpenArbitrage}
-              className="text-[9px] px-2 py-1 rounded-md bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all"
+              onClick={() => {
+                triggerHaptic("light");
+                safeStartViewTransition(() => onOpenArbitrage());
+              }}
+              className="text-[9px] px-2 py-1 rounded-md bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 flex items-center gap-1 transition-all cursor-pointer"
               title="Open Side-by-Side Multi-Cloud Arbitrage Comparison"
             >
               <Scale className="w-3 h-3" />
@@ -110,8 +127,8 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
               return (
                 <button
                   key={p}
-                  onClick={() => onProviderChange(p)}
-                  className={`px-3 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all duration-150 ${
+                  onClick={() => handleProviderSelect(p)}
+                  className={`px-3 py-1 rounded-md text-[10px] font-bold tracking-wider transition-all duration-150 cursor-pointer ${
                     isActive
                       ? `${providerTheme.activeBg} border`
                       : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
@@ -182,8 +199,11 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
       {/* 4. Collapsible Infrastructure Breakdown */}
       <div>
         <button
-          onClick={() => setDetailsOpen((prev) => !prev)}
-          className="w-full flex items-center justify-between text-[10px] text-slate-400 hover:text-slate-200 pt-1 transition-colors"
+          onClick={() => {
+            triggerHaptic("light");
+            setDetailsOpen((prev) => !prev);
+          }}
+          className="w-full flex items-center justify-between text-[10px] text-slate-400 hover:text-slate-200 pt-1 transition-colors cursor-pointer"
         >
           <span className="uppercase tracking-wider">
             {costs.providerName} Breakdown

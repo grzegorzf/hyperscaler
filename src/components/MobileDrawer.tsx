@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import type { ClusterState } from "@/hooks/useSimulationStream";
 import type { CloudProvider } from "@/lib/simulation/cloudCosts";
 import type { ArchitectureScenario } from "@/lib/simulation/scenarios";
-import { Sliders, BarChart3, Cloud, Flame, X, ChevronUp, Scale, FileText } from "lucide-react";
+import { Sliders, BarChart3, Cloud, Flame, X, Scale, FileText, MonitorPlay } from "lucide-react";
 import { TrafficStormSlider } from "./TrafficStormSlider";
 import { CdnSlider } from "./CdnSlider";
 import { ScalingControl } from "./ScalingControl";
@@ -13,6 +13,8 @@ import { TelemetryHUD } from "./TelemetryHUD";
 import { CloudCostHUD } from "./CloudCostHUD";
 import { ScenarioSelector } from "./ScenarioSelector";
 import { TelemetrySparklines } from "./TelemetrySparklines";
+import { triggerHaptic } from "@/lib/browser/webApis";
+import { safeStartViewTransition } from "@/lib/browser/viewTransitions";
 
 export interface MobileDrawerProps {
   state: ClusterState;
@@ -33,6 +35,8 @@ export interface MobileDrawerProps {
   onOpenExportReport: () => void;
   onSelectScenario: (scenario: ArchitectureScenario) => void;
   hourlyBurnRate: number;
+  wakeLockActive?: boolean;
+  onToggleWakeLock?: () => void;
 }
 
 type MobileTab = "NONE" | "CONTROLS" | "TELEMETRY" | "COSTS";
@@ -51,15 +55,24 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
   onOpenExportReport,
   onSelectScenario,
   hourlyBurnRate,
+  wakeLockActive = false,
+  onToggleWakeLock,
 }) => {
   const [activeTab, setActiveTab] = useState<MobileTab>("NONE");
 
   const toggleTab = (tab: MobileTab) => {
-    setActiveTab((prev) => (prev === tab ? "NONE" : tab));
+    triggerHaptic("light");
+    safeStartViewTransition(() => {
+      setActiveTab((prev) => (prev === tab ? "NONE" : tab));
+    });
   };
 
-  const isHealthy = state.systemHealth === "NOMINAL";
-  const isDegraded = state.systemHealth === "DEGRADED";
+  const closeDrawer = () => {
+    triggerHaptic("light");
+    safeStartViewTransition(() => {
+      setActiveTab("NONE");
+    });
+  };
 
   return (
     <>
@@ -69,7 +82,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           {/* Controls Tab Button */}
           <button
             onClick={() => toggleTab("CONTROLS")}
-            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation ${
+            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation cursor-pointer ${
               activeTab === "CONTROLS"
                 ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/60 shadow-[0_0_12px_rgba(0,240,255,0.3)]"
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
@@ -82,7 +95,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           {/* Telemetry Tab Button */}
           <button
             onClick={() => toggleTab("TELEMETRY")}
-            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation ${
+            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation cursor-pointer ${
               activeTab === "TELEMETRY"
                 ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/60 shadow-[0_0_12px_rgba(16,185,129,0.3)]"
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
@@ -95,7 +108,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           {/* Cloud Costs Tab Button */}
           <button
             onClick={() => toggleTab("COSTS")}
-            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation ${
+            className={`flex-1 flex items-center justify-center gap-1.5 min-h-[44px] py-2 px-1 rounded-xl text-[10px] font-bold tracking-wider uppercase transition-all touch-manipulation cursor-pointer ${
               activeTab === "COSTS"
                 ? "bg-amber-500/20 text-amber-300 border border-amber-400/60 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
                 : "text-slate-400 hover:text-slate-200 hover:bg-white/5 border border-transparent"
@@ -109,7 +122,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           <button
             onClick={() => onChaosToggle(!state.chaosActive)}
             title="Trigger Chaos Monkey"
-            className={`min-h-[44px] w-11 flex items-center justify-center rounded-xl border transition-all touch-manipulation ${
+            className={`min-h-[44px] w-11 flex items-center justify-center rounded-xl border transition-all touch-manipulation cursor-pointer ${
               state.chaosActive
                 ? "bg-rose-500/40 border-rose-500 text-rose-300 animate-pulse shadow-[0_0_12px_rgba(239,68,68,0.5)]"
                 : "bg-rose-950/30 border-rose-800/50 text-rose-400 hover:text-rose-200"
@@ -125,7 +138,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
         <div className="fixed inset-0 z-40 md:hidden flex flex-col justify-end">
           {/* Backdrop (tap to dismiss) */}
           <div
-            onClick={() => setActiveTab("NONE")}
+            onClick={closeDrawer}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity pointer-events-auto"
           />
 
@@ -133,7 +146,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
           <div className="relative z-50 glass-panel rounded-t-3xl border-t border-cyan-500/40 p-4 max-h-[85vh] flex flex-col shadow-[0_-12px_40px_rgba(0,0,0,0.9)] animate-slide-up pointer-events-auto pb-safe">
             {/* Drag Handle Indicator */}
             <div
-              onClick={() => setActiveTab("NONE")}
+              onClick={closeDrawer}
               className="w-12 h-1 bg-slate-600/80 rounded-full mx-auto mb-3 cursor-pointer"
             />
 
@@ -142,8 +155,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
               {/* Tabs Switcher in Sheet */}
               <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-slate-700/60 font-mono text-[10px]">
                 <button
-                  onClick={() => setActiveTab("CONTROLS")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] ${
+                  onClick={() => toggleTab("CONTROLS")}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] cursor-pointer ${
                     activeTab === "CONTROLS"
                       ? "bg-cyan-500/20 text-cyan-300 border border-cyan-400/50"
                       : "text-slate-400"
@@ -152,8 +165,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   Controls
                 </button>
                 <button
-                  onClick={() => setActiveTab("TELEMETRY")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] ${
+                  onClick={() => toggleTab("TELEMETRY")}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] cursor-pointer ${
                     activeTab === "TELEMETRY"
                       ? "bg-emerald-500/20 text-emerald-300 border border-emerald-400/50"
                       : "text-slate-400"
@@ -162,8 +175,8 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                   Telemetry
                 </button>
                 <button
-                  onClick={() => setActiveTab("COSTS")}
-                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] ${
+                  onClick={() => toggleTab("COSTS")}
+                  className={`px-3 py-1.5 rounded-lg font-bold transition-all min-h-[36px] cursor-pointer ${
                     activeTab === "COSTS"
                       ? "bg-amber-500/20 text-amber-300 border border-amber-400/50"
                       : "text-slate-400"
@@ -175,35 +188,51 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
 
               {/* Close Button */}
               <button
-                onClick={() => setActiveTab("NONE")}
-                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-300 hover:text-white touch-manipulation"
+                onClick={closeDrawer}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-800/60 border border-slate-700/60 text-slate-300 hover:text-white touch-manipulation cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Quick Action Matrix & Report Buttons */}
-            <div className="grid grid-cols-2 gap-2 mb-3">
+            {/* Quick Action Matrix & Report Buttons + Kiosk Mode */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
               <button
                 onClick={() => {
-                  setActiveTab("NONE");
+                  closeDrawer();
                   onOpenArbitrage();
                 }}
-                className="min-h-[44px] py-2 px-3 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-[11px] font-bold flex items-center justify-center gap-2 touch-manipulation transition-all"
+                className="min-h-[44px] py-2 px-2 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 active:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-mono text-[10px] font-bold flex items-center justify-center gap-1.5 touch-manipulation transition-all cursor-pointer"
               >
                 <Scale className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Compare Clouds</span>
+                <span>Arbitrage</span>
               </button>
               <button
                 onClick={() => {
-                  setActiveTab("NONE");
+                  closeDrawer();
                   onOpenExportReport();
                 }}
-                className="min-h-[44px] py-2 px-3 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[11px] font-bold flex items-center justify-center gap-2 touch-manipulation transition-all"
+                className="min-h-[44px] py-2 px-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-mono text-[10px] font-bold flex items-center justify-center gap-1.5 touch-manipulation transition-all cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Export Spec (.md)</span>
+                <span>Spec .md</span>
               </button>
+              {onToggleWakeLock && (
+                <button
+                  onClick={() => {
+                    onToggleWakeLock();
+                  }}
+                  className={`min-h-[44px] py-2 px-2 rounded-xl border font-mono text-[10px] font-bold flex items-center justify-center gap-1.5 touch-manipulation transition-all cursor-pointer ${
+                    wakeLockActive
+                      ? "bg-amber-500/20 border-amber-400 text-amber-300 shadow-[0_0_10px_rgba(245,158,11,0.3)]"
+                      : "bg-slate-900/60 border-slate-700/60 text-slate-400"
+                  }`}
+                  title="Toggle Screen Wake Lock"
+                >
+                  <MonitorPlay className="w-3.5 h-3.5 text-amber-400" />
+                  <span>{wakeLockActive ? "Kiosk On" : "Kiosk"}</span>
+                </button>
+              )}
             </div>
 
             {/* Drawer Body with smooth scrolling */}
@@ -281,7 +310,7 @@ export const MobileDrawer: React.FC<MobileDrawerProps> = ({
                     provider={cloudProvider}
                     onProviderChange={onProviderChange}
                     onOpenArbitrage={() => {
-                      setActiveTab("NONE");
+                      closeDrawer();
                       onOpenArbitrage();
                     }}
                     state={state}

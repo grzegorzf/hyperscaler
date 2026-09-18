@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import type { ArchitectureInsight } from "@/lib/simulation/advisor";
 import {
-  Sparkles,
   AlertTriangle,
   Flame,
   Info,
@@ -11,6 +10,8 @@ import {
   ChevronRight,
   ChevronLeft,
 } from "lucide-react";
+import { useMouseSpotlight } from "@/hooks/useMouseSpotlight";
+import { triggerHaptic } from "@/lib/browser/webApis";
 
 interface ArchitectAdvisorBannerProps {
   insights: ArchitectureInsight[];
@@ -22,6 +23,7 @@ export const ArchitectAdvisorBanner: React.FC<ArchitectAdvisorBannerProps> = ({
   className = "",
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const spotlight = useMouseSpotlight();
 
   if (!insights || insights.length === 0) return null;
 
@@ -51,16 +53,20 @@ export const ArchitectAdvisorBanner: React.FC<ArchitectAdvisorBannerProps> = ({
   }[activeInsight.severity];
 
   const handleNext = () => {
+    triggerHaptic("light");
     setActiveIndex((prev) => (prev + 1) % insights.length);
   };
 
   const handlePrev = () => {
+    triggerHaptic("light");
     setActiveIndex((prev) => (prev - 1 + insights.length) % insights.length);
   };
 
   return (
     <div
-      className={`glass-panel rounded-xl px-4 py-2.5 border ${severityConfig.border} flex items-center justify-between gap-3 text-xs font-mono transition-all duration-300 ${className}`}
+      onMouseMove={spotlight.onMouseMove}
+      onMouseLeave={spotlight.onMouseLeave}
+      className={`glass-panel gpu-spotlight cyber-hud-notch rounded-xl px-4 py-2.5 border ${severityConfig.border} flex items-center justify-between gap-3 text-xs font-mono transition-all duration-300 ${className}`}
     >
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         {severityConfig.icon}
@@ -98,13 +104,13 @@ export const ArchitectAdvisorBanner: React.FC<ArchitectAdvisorBannerProps> = ({
           </span>
           <button
             onClick={handlePrev}
-            className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-3 h-3" />
           </button>
           <button
             onClick={handleNext}
-            className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors"
+            className="p-1 rounded hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
           >
             <ChevronRight className="w-3 h-3" />
           </button>

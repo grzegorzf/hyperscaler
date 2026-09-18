@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useSimulationStream, ServerNode } from "@/hooks/useSimulationStream";
 import { HolographicCanvas } from "@/components/HolographicCanvas";
 import { TelemetryHUD } from "@/components/TelemetryHUD";
@@ -22,7 +22,15 @@ import { generateArchitectureInsights } from "@/lib/simulation/advisor";
 import { calculateCarbonFootprint } from "@/lib/simulation/carbonFootprint";
 import { generateArchitectureReportMarkdown } from "@/lib/simulation/reportExporter";
 import type { ArchitectureScenario } from "@/lib/simulation/scenarios";
-import { Scale, FileText } from "lucide-react";
+import { Scale, FileText, MonitorPlay } from "lucide-react";
+import {
+  triggerHaptic,
+  requestWakeLock,
+  releaseWakeLock,
+  subscribeWakeLock,
+} from "@/lib/browser/webApis";
+import { safeStartViewTransition } from "@/lib/browser/viewTransitions";
+import { useClusterBroadcast } from "@/hooks/useClusterBroadcast";
 
 export default function HyperscalerPage() {
   const {
@@ -39,6 +47,47 @@ export default function HyperscalerPage() {
   const [cloudProvider, setCloudProvider] = useState<CloudProvider>("AWS");
   const [arbitrageOpen, setArbitrageOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [wakeLockActive, setWakeLockActive] = useState(false);
+
+  // Screen Wake Lock API subscription
+  useEffect(() => {
+    return subscribeWakeLock((active) => {
+      setWakeLockActive(active);
+    });
+  }, []);
+
+  const handleToggleWakeLock = async () => {
+    triggerHaptic("medium");
+    if (wakeLockActive) {
+      await releaseWakeLock();
+    } else {
+      await requestWakeLock();
+    }
+  };
+
+  // Cross-Tab Cluster Synchronization via BroadcastChannel
+  const {
+    broadcastTraffic,
+    broadcastScaling,
+    broadcastChaos,
+    broadcastProvider,
+  } = useClusterBroadcast({
+    onTrafficSync: (rps, cdn, mult) => {
+      setTrafficMultiplier(mult);
+      updateTraffic(rps, cdn);
+    },
+    onScalingSync: (mode, auto, delta, cores) => {
+      updateScaling(mode, auto, delta, cores);
+    },
+    onChaosSync: (active) => {
+      triggerChaos(active);
+    },
+    onProviderSync: (provider) => {
+      safeStartViewTransition(() => {
+        setCloudProvider(provider);
+      });
+    },
+  });
 
   // Live Multi-Cloud Cost Comparison Arbitrage
   const coresPerTower = state.nodes[0]?.cpuCores || 16;
@@ -104,30 +153,93 @@ export default function HyperscalerPage() {
     const baseTraffic = 25000;
     const newTraffic = Math.round(baseTraffic * mult);
     updateTraffic(newTraffic, state.edgeCacheHitRate);
+    broadcastTraffic(newTraffic, state.edgeCacheHitRate, mult);
   };
 
   // Handle CDN cache hit rate adjustment
   const handleCacheRateChange = (rate: number) => {
     updateTraffic(state.trafficRps, rate);
+    broadcastTraffic(state.trafficRps, rate, trafficMultiplier);
   };
 
   // 1-Click Architecture Scenario Preset Switcher
   const handleSelectScenario = (scenario: ArchitectureScenario) => {
-    setTrafficMultiplier(scenario.trafficMultiplier);
-    const baseTraffic = 25000;
-    const newTraffic = Math.round(baseTraffic * scenario.trafficMultiplier);
-    updateTraffic(newTraffic, scenario.edgeCacheHitRate);
-    updateScaling(
-      scenario.scalingMode,
-      scenario.autoScalingEnabled,
-      scenario.scalingMode === "HORIZONTAL" && scenario.manualPods !== undefined
-        ? scenario.manualPods - state.totalNodes
-        : 0,
-      scenario.scalingMode === "VERTICAL"
-        ? scenario.manualCores
-        : undefined
-    );
-    triggerChaos(scenario.chaosActive);
+    triggerHaptic("heavy");
+    safeStartViewTransition(() => {
+      setTrafficMultiplier(scenario.trafficMultiplier);
+      const baseTraffic = 25000;
+      const newTraffic = Math.round(baseTraffic * scenario.trafficMultiplier);
+      updateTraffic(newTraffic, scenario.edgeCacheHitRate);
+      const delta =
+        scenario.scalingMode === "HORIZONTAL" && scenario.manualPods !== undefined
+          ? scenario.manualPods - state.totalNodes
+          : 0;
+      updateScaling(
+        scenario.scalingMode,
+        scenario.autoScalingEnabled,
+        delta,
+        scenario.scalingMode === "VERTICAL" ? scenario.manualCores : undefined
+      );
+      triggerChaos(scenario.chaosActive);
+
+      broadcastTraffic(newTraffic, scenario.edgeCacheHitRate, scenario.trafficMultiplier);
+      broadcastScaling(
+        scenario.scalingMode,
+        scenario.autoScalingEnabled,
+        delta,
+        scenario.scalingMode === "VERTICAL" ? scenario.manualCores : undefined
+      );
+      broadcastChaos(scenario.chaosActive);
+    });
+  };
+
+  const handleProviderChange = (p: CloudProvider) => {
+    safeStartViewTransition(() => {
+      setCloudProvider(p);
+      broadcastProvider(p);
+    });
+  };
+
+  const handleScalingChange = (
+    mode: "HORIZONTAL" | "VERTICAL",
+    autoScale: boolean,
+    delta: number = 0,
+    cores?: number
+  ) => {
+    safeStartViewTransition(() => {
+      updateScaling(mode, autoScale, delta, cores);
+      broadcastScaling(mode, autoScale, delta, cores);
+    });
+  };
+
+  const handleChaosToggle = (active: boolean) => {
+    triggerChaos(active);
+    broadcastChaos(active);
+  };
+
+  const handleOpenArbitrage = () => {
+    triggerHaptic("light");
+    safeStartViewTransition(() => setArbitrageOpen(true));
+  };
+
+  const handleCloseArbitrage = () => {
+    triggerHaptic("light");
+    safeStartViewTransition(() => setArbitrageOpen(false));
+  };
+
+  const handleOpenReport = () => {
+    triggerHaptic("light");
+    safeStartViewTransition(() => setReportOpen(true));
+  };
+
+  const handleCloseReport = () => {
+    triggerHaptic("light");
+    safeStartViewTransition(() => setReportOpen(false));
+  };
+
+  const handleSelectNode = (node: ServerNode | null) => {
+    if (node) triggerHaptic("light");
+    safeStartViewTransition(() => setSelectedNode(node));
   };
 
   return (
@@ -153,7 +265,7 @@ export default function HyperscalerPage() {
           <ScenarioSelector onSelectScenario={handleSelectScenario} />
 
           <button
-            onClick={() => setArbitrageOpen(true)}
+            onClick={handleOpenArbitrage}
             className="glass-panel px-3 py-1.5 rounded-xl border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white flex items-center gap-2 font-mono text-xs transition-all shadow-[0_0_12px_rgba(0,240,255,0.15)] active:scale-95 cursor-pointer"
             title="Open Multi-Cloud Arbitrage Benchmark Matrix"
           >
@@ -162,12 +274,37 @@ export default function HyperscalerPage() {
           </button>
 
           <button
-            onClick={() => setReportOpen(true)}
+            onClick={handleOpenReport}
             className="glass-panel px-3 py-1.5 rounded-xl border border-emerald-500/30 hover:border-emerald-400 text-emerald-300 hover:text-white flex items-center gap-2 font-mono text-xs transition-all shadow-[0_0_12px_rgba(16,185,129,0.15)] active:scale-95 cursor-pointer"
             title="Generate & Export Architecture Spec Markdown"
           >
             <FileText className="w-3.5 h-3.5 text-emerald-400" />
             <span>Export Spec</span>
+          </button>
+
+          {/* Screen Wake Lock (Kiosk Mode) */}
+          <button
+            onClick={handleToggleWakeLock}
+            className={`glass-panel px-3 py-1.5 rounded-xl border flex items-center gap-2 font-mono text-xs transition-all active:scale-95 cursor-pointer ${
+              wakeLockActive
+                ? "border-amber-400 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
+                : "border-slate-700/60 hover:border-slate-500 text-slate-400 hover:text-slate-200"
+            }`}
+            title={
+              wakeLockActive
+                ? "Kiosk Mode Active: Display sleep is prevented for cluster monitoring"
+                : "Enable Kiosk Mode: Keeps screen awake during cluster simulations"
+            }
+          >
+            <div
+              className={`w-2 h-2 rounded-full transition-all ${
+                wakeLockActive
+                  ? "bg-amber-400 animate-beacon shadow-[0_0_8px_#f59e0b]"
+                  : "bg-slate-600"
+              }`}
+            />
+            <MonitorPlay className="w-3.5 h-3.5 text-amber-400" />
+            <span>{wakeLockActive ? "Kiosk Live" : "Kiosk"}</span>
           </button>
         </div>
 
@@ -258,7 +395,7 @@ export default function HyperscalerPage() {
       {/* 2. Central 3D Holographic Canvas Viewport */}
       <div className="relative flex-1 w-full h-full overflow-hidden">
         {/* The 60 FPS Canvas Engine */}
-        <HolographicCanvas state={state} onSelectNode={setSelectedNode} />
+        <HolographicCanvas state={state} onSelectNode={handleSelectNode} />
 
         {/* Live Senior Cloud Architect Advisory Ticker */}
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-xl pointer-events-auto">
@@ -270,8 +407,8 @@ export default function HyperscalerPage() {
           <TelemetryHUD state={state} history={throughputHistory} />
           <CloudCostHUD
             provider={cloudProvider}
-            onProviderChange={setCloudProvider}
-            onOpenArbitrage={() => setArbitrageOpen(true)}
+            onProviderChange={handleProviderChange}
+            onOpenArbitrage={handleOpenArbitrage}
             state={state}
           />
           <TelemetrySparklines
@@ -303,24 +440,24 @@ export default function HyperscalerPage() {
           {/* Scaling Architecture Toggle */}
           <ScalingControl
             state={state}
-            onScaleChange={updateScaling}
+            onScaleChange={handleScalingChange}
           />
 
           {/* Chaos Monkey Outage Trigger */}
           <ChaosControl
             chaosActive={state.chaosActive}
-            onChaosToggle={triggerChaos}
+            onChaosToggle={handleChaosToggle}
           />
         </div>
 
         {/* Selected Node Details Drawer */}
         <NodeInspectorModal
           node={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          onClose={() => handleSelectNode(null)}
         />
 
         {/* Desktop Bottom-Right Legend */}
-        <div className="hidden md:flex absolute bottom-6 right-6 z-20 glass-panel rounded-xl px-4 py-2.5 border border-cyan-500/20 items-center gap-5 text-[10px] font-mono text-slate-400 pointer-events-auto">
+        <div className="hidden md:flex absolute bottom-6 right-6 z-20 glass-panel cyber-hud-notch rounded-xl px-4 py-2.5 border border-cyan-500/20 items-center gap-5 text-[10px] font-mono text-slate-400 pointer-events-auto">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
             <span>Edge Hit (5ms)</span>
@@ -342,27 +479,29 @@ export default function HyperscalerPage() {
           trafficMultiplier={trafficMultiplier}
           onMultiplierChange={handleMultiplierChange}
           onCacheRateChange={handleCacheRateChange}
-          onScaleChange={updateScaling}
-          onChaosToggle={triggerChaos}
+          onScaleChange={handleScalingChange}
+          onChaosToggle={handleChaosToggle}
           cloudProvider={cloudProvider}
-          onProviderChange={setCloudProvider}
-          onOpenArbitrage={() => setArbitrageOpen(true)}
-          onOpenExportReport={() => setReportOpen(true)}
+          onProviderChange={handleProviderChange}
+          onOpenArbitrage={handleOpenArbitrage}
+          onOpenExportReport={handleOpenReport}
           onSelectScenario={handleSelectScenario}
           hourlyBurnRate={activeCosts.hourlyBurnRate}
+          wakeLockActive={wakeLockActive}
+          onToggleWakeLock={handleToggleWakeLock}
         />
 
         {/* Multi-Cloud Arbitrage Modal */}
         <CloudArbitrageModal
           isOpen={arbitrageOpen}
-          onClose={() => setArbitrageOpen(false)}
+          onClose={handleCloseArbitrage}
           comparison={comparison}
         />
 
         {/* Architecture Spec & Executive FinOps Report Exporter */}
         <ExportReportModal
           isOpen={reportOpen}
-          onClose={() => setReportOpen(false)}
+          onClose={handleCloseReport}
           markdownContent={markdownReport}
         />
       </div>

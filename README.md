@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript" alt="TypeScript 5" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?logo=tailwindcss" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Node.js-22.x-green?logo=node.js" alt="Node.js 22" />
-  <img src="https://img.shields.io/badge/Tests-47%20Passing-brightgreen?logo=checkmarx" alt="47 Tests Passing" />
+  <img src="https://img.shields.io/badge/Tests-55%20Passing-brightgreen?logo=checkmarx" alt="55 Tests Passing" />
   <img src="https://img.shields.io/badge/License-MIT-amber" alt="License MIT" />
 </p>
 
@@ -61,7 +61,11 @@ Experience the tangible differences between **Horizontal Auto-Scaling** (Kuberne
 | **🛡️ Edge CDN Cache Ratio** | `CdnSlider` | Configurable cache hit rate from **0% to 98%**. Cache hits deflect packets within 5ms; misses route downstream to origin load balancers. |
 | **🐒 Chaos Monkey** | `ChaosControl` | Simulates cloud availability zone failure. Pods turn crimson with overload warnings, latency spikes, and automatic 4.5s self-healing triggers. |
 | **🌿 Green Cloud Sustainability** | `CloudCostHUD` | Real-time ESG metrics calculating monthly kg CO₂e emissions, equivalent trees required for offset, and an Eco Score rating (A+ Net Zero). |
-| **📄 Executive Spec Exporter** | `ExportReportModal` | Generates a complete, downloadable or copy-ready Markdown architecture and FinOps executive report. |
+| **📄 Executive Spec Exporter** | `ExportReportModal` | Generates a complete, downloadable or copy-ready Markdown architecture and FinOps executive report. Includes native browser **GZIP compression (`.md.gz`)** via `CompressionStream`. |
+| **📺 Kiosk Wallboard Mode** | `Screen Wake Lock` | Prevents display sleep and dimming during long-running cluster demonstrations or NOC room monitoring. |
+| **🔀 W3C View Transitions** | `viewTransitions` | Native 120 FPS layout & DOM morphing when switching cloud providers, scenarios, and scaling architectures. |
+| **📡 Cross-Tab Sync Bus** | `useClusterBroadcast` | Distributed state bus via `BroadcastChannel` enabling zero-latency multi-window and multi-monitor simulation control. |
+| **📳 Tactile Haptic Engine** | `triggerHaptic` | Physical vibration cadences for Chaos Monkey alarms, provider toggling, and traffic slider micro-ticks on supported mobile devices. |
 | **📱 Mobile Action Dock & Sheet** | `MobileDrawer` | Thumb-friendly bottom dock with expandable cybernetic glass sheet providing full feature access on mobile viewports. |
 | **🔍 Real-Time Node Inspector** | `NodeInspectorModal` | Touch or click any blade or tower to inspect core count, allocated RAM, CPU utilization, and requests/sec. |
 
