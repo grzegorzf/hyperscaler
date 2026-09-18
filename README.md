@@ -121,7 +121,9 @@ hyperscaler/
 ├── tests/
 │   ├── physics.test.ts          # 8 tests: traffic, queuing, particle velocity
 │   ├── engine.test.ts           # 7 tests: pod replication, core tiers, chaos
-│   └── layout.test.ts           # 4 tests: geometry, bounds, collision avoidance
+│   ├── layout.test.ts           # 4 tests: geometry, bounds, collision avoidance
+│   ├── loader.mjs               # Node 22 ESM test loader registration
+│   └── resolver-hook.mjs        # Extensionless TypeScript import resolver
 ├── Dockerfile                   # Multi-stage lightweight Nginx static container
 ├── docker-compose.yml           # Single-command Docker deployment
 ├── next.config.ts               # Static HTML export & automatic basePath resolution
@@ -151,7 +153,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 ```bash
 npm test
 # or directly with Node 22:
-node --test --experimental-strip-types tests/**/*.test.ts
+node --test --experimental-strip-types --import ./tests/loader.mjs tests/*.test.ts
 ```
 All 19 unit tests run in **~100ms** with zero external testing dependencies.
 
