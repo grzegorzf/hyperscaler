@@ -1,0 +1,9 @@
+services:
+  hyperscaler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hyperscaler-app
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

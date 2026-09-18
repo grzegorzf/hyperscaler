@@ -1,0 +1,93 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-space: #06090e;
+  --cyan-glow: rgba(0, 240, 255, 0.4);
+  --amber-glow: rgba(245, 158, 11, 0.4);
+}
+
+body {
+  background-color: var(--bg-space);
+  color: #e2e8f0;
+  overflow: hidden;
+  user-select: none;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Glassmorphism Panel */
+.glass-panel {
+  background: rgba(10, 16, 26, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.15);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), inset 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.glass-panel-amber {
+  background: rgba(18, 14, 8, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.7), inset 0 0 1px rgba(245, 158, 11, 0.2);
+}
+
+/* Neon Glow Accents */
+.glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.glow-amber {
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+}
+
+.glow-emerald {
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+}
+
+.glow-ruby {
+  text-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
+}
+
+/* Custom Range Input */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  height: 6px;
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #00f0ff;
+  box-shadow: 0 0 12px #00f0ff;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.range-amber::-webkit-slider-thumb {
+  background: #f59e0b !important;
+  box-shadow: 0 0 12px #f59e0b !important;
+}
+
+/* Pulsing beacon */
+@keyframes beacon-pulse {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.animate-beacon {
+  animation: beacon-pulse 2.5s infinite ease-in-out;
+}
