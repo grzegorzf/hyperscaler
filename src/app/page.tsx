@@ -245,9 +245,10 @@ export default function HyperscalerPage() {
   return (
     <main className="relative w-screen h-screen bg-[#06090e] overflow-hidden flex flex-col font-sans">
       {/* 1. Header Bar */}
-      <header className="h-14 bg-gradient-to-b from-[#0e1626]/90 to-[#080d17]/70 border-b border-cyan-500/20 px-4 md:px-6 flex items-center justify-between backdrop-blur-xl z-20">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 rounded-lg border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,240,255,0.4)]">
+      <header className="h-14 bg-gradient-to-b from-[#0e1626]/95 to-[#080d17]/85 border-b border-cyan-500/20 px-4 lg:px-6 flex items-center justify-between backdrop-blur-xl z-20 shrink-0">
+        {/* Left: Brand Identity */}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="w-8 h-8 rounded-lg border-2 border-cyan-400 flex items-center justify-center shadow-[0_0_12px_rgba(0,240,255,0.4)] bg-cyan-950/40">
             <div className="w-2.5 h-2.5 bg-cyan-400 rounded-sm" />
           </div>
           <div>
@@ -260,100 +261,89 @@ export default function HyperscalerPage() {
           </div>
         </div>
 
-        {/* Header Action Controls: Scenario Selector & Modals */}
-        <div className="hidden lg:flex items-center gap-3">
+        {/* Center: Action Controls Toolbar */}
+        <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
           <ScenarioSelector onSelectScenario={handleSelectScenario} />
 
-          <button
-            onClick={handleOpenArbitrage}
-            className="glass-panel px-3 py-1.5 rounded-xl border border-cyan-500/30 hover:border-cyan-400 text-cyan-300 hover:text-white flex items-center gap-2 font-mono text-xs transition-all shadow-[0_0_12px_rgba(0,240,255,0.15)] active:scale-95 cursor-pointer"
-            title="Open Multi-Cloud Arbitrage Benchmark Matrix"
-          >
-            <Scale className="w-3.5 h-3.5 text-cyan-400" />
-            <span>Arbitrage Matrix</span>
-          </button>
+          <div className="flex items-center gap-1 p-0.5 rounded-xl bg-black/50 border border-slate-800 shadow-inner">
+            <button
+              onClick={handleOpenArbitrage}
+              className="h-9 px-3 rounded-lg border border-cyan-500/20 hover:border-cyan-400/60 bg-cyan-500/5 hover:bg-cyan-500/15 text-cyan-300 hover:text-white flex items-center gap-1.5 font-mono text-xs transition-all active:scale-95 cursor-pointer"
+              title="Open Multi-Cloud Arbitrage Benchmark Matrix"
+            >
+              <Scale className="w-3.5 h-3.5 text-cyan-400" />
+              <span>Arbitrage</span>
+            </button>
 
-          <button
-            onClick={handleOpenReport}
-            className="glass-panel px-3 py-1.5 rounded-xl border border-emerald-500/30 hover:border-emerald-400 text-emerald-300 hover:text-white flex items-center gap-2 font-mono text-xs transition-all shadow-[0_0_12px_rgba(16,185,129,0.15)] active:scale-95 cursor-pointer"
-            title="Generate & Export Architecture Spec Markdown"
-          >
-            <FileText className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Export Spec</span>
-          </button>
+            <button
+              onClick={handleOpenReport}
+              className="h-9 px-3 rounded-lg border border-emerald-500/20 hover:border-emerald-400/60 bg-emerald-500/5 hover:bg-emerald-500/15 text-emerald-300 hover:text-white flex items-center gap-1.5 font-mono text-xs transition-all active:scale-95 cursor-pointer"
+              title="Generate & Export Architecture Spec Markdown"
+            >
+              <FileText className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Spec (.md)</span>
+            </button>
 
-          {/* Screen Wake Lock (Kiosk Mode) */}
-          <button
-            onClick={handleToggleWakeLock}
-            className={`glass-panel px-3 py-1.5 rounded-xl border flex items-center gap-2 font-mono text-xs transition-all active:scale-95 cursor-pointer ${
-              wakeLockActive
-                ? "border-amber-400 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)]"
-                : "border-slate-700/60 hover:border-slate-500 text-slate-400 hover:text-slate-200"
-            }`}
-            title={
-              wakeLockActive
-                ? "Kiosk Mode Active: Display sleep is prevented for cluster monitoring"
-                : "Enable Kiosk Mode: Keeps screen awake during cluster simulations"
-            }
-          >
-            <div
-              className={`w-2 h-2 rounded-full transition-all ${
+            {/* Screen Wake Lock (Kiosk Mode) */}
+            <button
+              onClick={handleToggleWakeLock}
+              className={`h-9 px-3 rounded-lg border flex items-center gap-1.5 font-mono text-xs transition-all active:scale-95 cursor-pointer ${
                 wakeLockActive
-                  ? "bg-amber-400 animate-beacon shadow-[0_0_8px_#f59e0b]"
-                  : "bg-slate-600"
+                  ? "border-amber-400/60 bg-amber-500/20 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.3)] font-semibold"
+                  : "border-transparent text-slate-400 hover:text-slate-200 hover:bg-white/5"
               }`}
-            />
-            <MonitorPlay className="w-3.5 h-3.5 text-amber-400" />
-            <span>{wakeLockActive ? "Kiosk Live" : "Kiosk"}</span>
-          </button>
+              title={
+                wakeLockActive
+                  ? "Kiosk Mode Active: Display sleep is prevented for cluster monitoring"
+                  : "Enable Kiosk Mode: Keeps screen awake during cluster simulations"
+              }
+            >
+              <MonitorPlay className={`w-3.5 h-3.5 ${wakeLockActive ? "text-amber-400 animate-pulse" : "text-slate-400"}`} />
+              <span>{wakeLockActive ? "Kiosk On" : "Kiosk"}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Global Quick Readout */}
-        <div className="hidden md:flex items-center gap-6 xl:gap-8 font-mono text-xs">
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-400 uppercase tracking-wider">
-              Global Ingress
-            </span>
+        {/* Right: Contained Telemetry Capsule (xl screens and above) */}
+        <div className="hidden xl:flex items-center gap-3.5 px-3.5 py-1.5 rounded-xl bg-black/60 border border-slate-800 font-mono text-xs shadow-inner shrink-0">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-beacon shadow-[0_0_6px_#00f0ff]" />
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Ingress</span>
             <span className="font-bold text-cyan-400 glow-cyan">
-              {state.trafficRps.toLocaleString()} req/s
+              {state.trafficRps.toLocaleString()}
+              <span className="text-[9px] text-slate-500 font-normal ml-0.5">req/s</span>
             </span>
           </div>
 
-          <div className="w-[1px] h-6 bg-cyan-500/20" />
+          <div className="w-[1px] h-3.5 bg-slate-800" />
 
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-400 uppercase tracking-wider">
-              CDN Absorption
-            </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider">CDN</span>
             <span className="font-bold text-emerald-400 glow-emerald">
               {Math.round(state.edgeCacheHitRate * 100)}%
             </span>
           </div>
 
-          <div className="w-[1px] h-6 bg-cyan-500/20" />
+          <div className="w-[1px] h-3.5 bg-slate-800" />
 
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-400 uppercase tracking-wider">
-              Architecture
-            </span>
-            <span className="font-bold text-amber-400 glow-amber">
-              {state.scalingMode === "HORIZONTAL" ? "HORIZONTAL MESH" : "VERTICAL BOOST"}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Mode</span>
+            <span className="font-bold text-amber-400">
+              {state.scalingMode === "HORIZONTAL" ? `${state.totalNodes} Pods` : `${state.nodes[0]?.cpuCores || 16}C`}
             </span>
           </div>
 
-          <div className="w-[1px] h-6 bg-cyan-500/20" />
+          <div className="w-[1px] h-3.5 bg-slate-800" />
 
-          <div className="flex flex-col items-end">
-            <span className="text-[9px] text-slate-400 uppercase tracking-wider">
-              Cloud Target
-            </span>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-slate-400 uppercase tracking-wider">Cloud</span>
             <span
-              className={`font-bold ${
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
                 cloudProvider === "AWS"
-                  ? "text-amber-400 glow-amber"
+                  ? "bg-amber-500/15 border-amber-500/40 text-amber-300"
                   : cloudProvider === "GCP"
-                  ? "text-blue-400"
-                  : "text-sky-400 glow-cyan"
+                  ? "bg-blue-500/15 border-blue-500/40 text-blue-300"
+                  : "bg-sky-500/15 border-sky-500/40 text-sky-300 glow-cyan"
               }`}
             >
               {cloudProvider}
@@ -361,9 +351,9 @@ export default function HyperscalerPage() {
           </div>
         </div>
 
-        {/* Mobile Quick Status Header */}
-        <div className="flex md:hidden items-center gap-2 font-mono text-[10px]">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-cyan-500/20">
+        {/* Right (compact fallback for mobile, tablet, and medium screens) */}
+        <div className="flex xl:hidden items-center gap-2 font-mono text-[10px] shrink-0">
+          <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-black/60 border border-slate-800">
             <div
               className={`w-1.5 h-1.5 rounded-full animate-beacon ${
                 state.systemHealth === "NOMINAL"
@@ -376,7 +366,7 @@ export default function HyperscalerPage() {
             <span className="font-bold text-cyan-400">
               {(state.trafficRps / 1000).toFixed(0)}k req/s
             </span>
-            <span className="text-slate-600">|</span>
+            <span className="text-slate-700">|</span>
             <span
               className={`font-bold ${
                 cloudProvider === "AWS"

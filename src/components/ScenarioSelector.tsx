@@ -33,7 +33,7 @@ export const ScenarioSelector: React.FC<ScenarioSelectorProps> = ({
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="glass-panel rounded-xl px-3.5 py-2 border border-cyan-500/30 hover:border-cyan-400 flex items-center justify-between gap-3 text-slate-200 transition-all duration-200 w-full md:w-auto"
+        className="h-9 glass-panel rounded-xl px-3 border border-cyan-500/30 hover:border-cyan-400 flex items-center justify-between gap-2.5 text-slate-200 transition-all duration-200 w-full md:w-auto cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <Compass className="w-3.5 h-3.5 text-cyan-400" />
