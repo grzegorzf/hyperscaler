@@ -23,12 +23,12 @@ describe("Multi-Cloud Cost Modeling", () => {
     assert.strictEqual(cost.provider, "AWS");
     assert.strictEqual(cost.providerName, "Amazon Web Services");
     assert.ok(
-      cost.monthlyTotal >= 350 && cost.monthlyTotal <= 950,
-      `Monthly total should be realistic (~$500-$700), got ${cost.monthlyTotal}`
+      cost.monthlyTotal >= 800 && cost.monthlyTotal <= 2000,
+      `Monthly total should be realistic (~$1,000-$1,500), got ${cost.monthlyTotal}`
     );
     assert.ok(cost.hourlyBurnRate > 0, "Hourly burn rate should be positive");
     assert.ok(
-      cost.computeMonthly >= 200 && cost.computeMonthly <= 500,
+      cost.computeMonthly >= 400 && cost.computeMonthly <= 900,
       `Compute should account for EKS + nodes, got ${cost.computeMonthly}`
     );
     assert.ok(cost.cdnMonthly > 0, "CDN request & egress costs must be present");
@@ -78,5 +78,18 @@ describe("Multi-Cloud Cost Modeling", () => {
     assert.ok(storm.monthlyTotal > normal.monthlyTotal, "5x traffic storm must increase total cost");
     assert.ok(storm.hourlyBurnRate > normal.hourlyBurnRate);
     assert.ok(storm.monthlyTotalGb > normal.monthlyTotalGb);
+  });
+
+  it("scales costs 10x-50x higher under max simulated swarm load", () => {
+    const normal = calculateCloudCosts("AWS", 25000, 0.75, "HORIZONTAL", 8);
+    const swarm = calculateCloudCosts("AWS", 125000, 0.75, "HORIZONTAL", 28);
+
+    const ratio = swarm.monthlyTotal / normal.monthlyTotal;
+    assert.ok(
+      ratio >= 10 && ratio <= 50,
+      `Swarm traffic should scale costs 10x-50x higher, got ${ratio.toFixed(1)}x (${normal.monthlyTotal} -> ${swarm.monthlyTotal})`
+    );
+    assert.ok(swarm.monthlyTotal >= 20000, "Max simulated load should exceed $20k/mo");
+    assert.ok(swarm.hourlyBurnRate >= 25, "Hourly burn rate under swarm should be intense ($25+/hr)");
   });
 });

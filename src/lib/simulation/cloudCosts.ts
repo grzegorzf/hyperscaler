@@ -21,11 +21,12 @@ export interface CloudCostBreakdown {
 
 const HOURS_PER_MONTH = 732; // Average 30.5 days * 24 hrs
 const SECONDS_PER_MONTH = HOURS_PER_MONTH * 3600; // 2,635,200 seconds
-const AVG_PAYLOAD_KB = 3.5; // Realistic 3.5 KB avg compressed response
+const AVG_PAYLOAD_KB = 6.0; // 6.0 KB avg response (dynamic JSON APIs + cached web assets)
 
 /**
  * Calculates real-world cloud infrastructure costs for AWS, GCP, and Azure.
- * Features true scale-to-zero ($0 at 0 traffic) and realistic enterprise tiering.
+ * Features true scale-to-zero ($0 at 0 traffic), realistic baseline operations,
+ * and high-fidelity storm surge scaling (10-50x higher under max simulated swarm load).
  */
 export function calculateCloudCosts(
   provider: CloudProvider,
@@ -41,8 +42,8 @@ export function calculateCloudCosts(
     AZURE: "Microsoft Azure",
   };
 
-  // True Scale-To-Zero: If traffic is 0 or all nodes have descaled to 0, costs are literally $0.00
-  if (trafficRps <= 0 || (scalingMode === "HORIZONTAL" && nodeCount <= 0)) {
+  // True Scale-To-Zero: If traffic is 0, costs are literally $0.00
+  if (trafficRps <= 0) {
     return {
       provider,
       providerName: providerNames[provider],
@@ -63,34 +64,42 @@ export function calculateCloudCosts(
 
   const safeTraffic = Math.max(0, trafficRps);
   const hitRate = Math.max(0, Math.min(0.99, edgeCacheHitRate));
+  const mult = safeTraffic / 25000;
+  const originRps = Math.round(safeTraffic * (1 - hitRate));
 
-  // Traffic volume metrics
-  // In realistic web services with diurnal traffic curves, average monthly RPS is ~1.5% of peak burst
-  const totalMonthlyRequests = Math.round(safeTraffic * SECONDS_PER_MONTH * 0.015);
+  // Storm surge exponent:
+  // Normal (1.0x) reflects realistic diurnal production traffic (~1B req/mo).
+  // Storm / Swarm (5.0x) expands non-linearly to reflect sustained peak attack/surge volume (~65B req/mo).
+  const surgeMultiplier = Math.pow(mult, 1.6);
+  const totalMonthlyRequests = Math.round(
+    safeTraffic * SECONDS_PER_MONTH * 0.015 * Math.max(1, surgeMultiplier)
+  );
   const monthlyRequestsBillion = Number((totalMonthlyRequests / 1_000_000_000).toFixed(2));
 
   // Egress bandwidth (in Gigabytes)
   const monthlyTotalGb = Math.round((totalMonthlyRequests * AVG_PAYLOAD_KB) / (1024 * 1024));
   const originEgressGb = Math.round(monthlyTotalGb * (1 - hitRate));
-  const originRps = Math.round(safeTraffic * (1 - hitRate));
 
   // 1. Elastic Compute Cost
   let computeMonthly = 0;
   let computeLabel = "";
 
   if (scalingMode === "HORIZONTAL") {
-    if (provider === "AWS") {
-      // EKS Auto Mode / Fargate Pods: ~$0.045/hr (~$32.90/mo per pod)
-      computeMonthly = nodeCount * 32.90;
-      computeLabel = `EKS Auto Mode (${nodeCount}x Pods)`;
+    if (nodeCount <= 0) {
+      computeMonthly = 0;
+      computeLabel = "Dormant (0 Active Pods)";
+    } else if (provider === "AWS") {
+      // EKS Auto Mode / Managed Nodes (4 vCPU / 16 GB pods @ $68/mo + $73.20 cluster fee)
+      computeMonthly = nodeCount * 68.0 + 73.2;
+      computeLabel = `EKS + ${nodeCount}x 4vCPU Pods`;
     } else if (provider === "GCP") {
-      // GKE Autopilot Pods: ~$0.040/hr (~$29.30/mo per pod)
-      computeMonthly = nodeCount * 29.30;
-      computeLabel = `GKE Autopilot (${nodeCount}x Pods)`;
+      // GKE Autopilot Pods (4 vCPU / 16 GB @ $58/mo, free zonal cluster management)
+      computeMonthly = nodeCount * 58.0;
+      computeLabel = `GKE + ${nodeCount}x 4vCPU Pods`;
     } else {
-      // Azure Container Apps / AKS Virtual Nodes: ~$0.046/hr (~$33.70/mo per pod)
-      computeMonthly = nodeCount * 33.70;
-      computeLabel = `AKS Virtual Nodes (${nodeCount}x Pods)`;
+      // Azure AKS Container Apps / Nodes (4 vCPU / 16 GB @ $62/mo, free tier cluster)
+      computeMonthly = nodeCount * 62.0;
+      computeLabel = `AKS + ${nodeCount}x 4vCPU Pods`;
     }
   } else {
     // Vertical Monolith (4 units)
@@ -98,10 +107,10 @@ export function calculateCloudCosts(
       computeMonthly = 0;
       computeLabel = "Standby (0 Cores Active)";
     } else {
-      let hourlyPerTower = 0.08; // 8C
-      if (coresPerTower >= 64) hourlyPerTower = 0.64;
-      else if (coresPerTower >= 32) hourlyPerTower = 0.32;
-      else if (coresPerTower >= 16) hourlyPerTower = 0.16;
+      let hourlyPerTower = 0.384; // 8C (m6i.2xlarge tier)
+      if (coresPerTower >= 64) hourlyPerTower = 3.072; // 64C (m6i.16xlarge tier)
+      else if (coresPerTower >= 32) hourlyPerTower = 1.536; // 32C (m6i.8xlarge tier)
+      else if (coresPerTower >= 16) hourlyPerTower = 0.768; // 16C (m6i.4xlarge tier)
 
       computeMonthly = 4 * hourlyPerTower * HOURS_PER_MONTH;
       if (provider === "AWS") {
@@ -119,25 +128,28 @@ export function calculateCloudCosts(
   let cdnLabel = "";
 
   if (provider === "AWS") {
-    // CloudFront enterprise tiered egress (~$0.012/GB) + $0.15/1M HTTPS requests
-    const egressCost = monthlyTotalGb * 0.012;
-    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.15;
+    // CloudFront enterprise tiered egress ($0.020 - $0.028/GB) + $0.40/1M requests
+    const egressRate = mult >= 3.0 ? 0.028 : 0.020;
+    const egressCost = monthlyTotalGb * egressRate;
+    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.40;
     cdnMonthly = egressCost + reqCost;
-    cdnLabel = `CloudFront (0.012/GB)`;
+    cdnLabel = `CloudFront (${egressRate}/GB + reqs)`;
   } else if (provider === "GCP") {
-    // Cloud CDN high-volume egress (~$0.011/GB) + lookup discount
-    const egressCost = monthlyTotalGb * 0.011;
-    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.14;
-    const fillCost = originEgressGb * 0.005;
+    // Cloud CDN high-volume egress ($0.018 - $0.026/GB) + $0.35/1M lookups + fill fee
+    const egressRate = mult >= 3.0 ? 0.026 : 0.018;
+    const egressCost = monthlyTotalGb * egressRate;
+    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.35;
+    const fillCost = originEgressGb * 0.008;
     cdnMonthly = egressCost + reqCost + fillCost;
-    cdnLabel = `Google Cloud CDN (0.011/GB)`;
+    cdnLabel = `Google Cloud CDN (${egressRate}/GB)`;
   } else {
-    // Azure Front Door enterprise tier (~$0.014/GB) + request fees
-    const egressCost = monthlyTotalGb * 0.014;
-    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.16;
-    const fillCost = originEgressGb * 0.006;
-    cdnMonthly = egressCost + reqCost + fillCost;
-    cdnLabel = `Azure Front Door (0.014/GB)`;
+    // Azure Front Door enterprise tier ($0.022 - $0.030/GB) + $0.42/1M requests + base fee
+    const egressRate = mult >= 3.0 ? 0.030 : 0.022;
+    const egressCost = monthlyTotalGb * egressRate;
+    const reqCost = (totalMonthlyRequests / 1_000_000) * 0.42;
+    const fillCost = originEgressGb * 0.010;
+    cdnMonthly = 35.0 + egressCost + reqCost + fillCost;
+    cdnLabel = `Azure Front Door (${egressRate}/GB)`;
   }
 
   // 3. Load Balancing Cost
@@ -148,36 +160,38 @@ export function calculateCloudCosts(
     loadBalancerMonthly = 0;
     loadBalancerLabel = "Standby (0 LCUs)";
   } else if (provider === "AWS") {
-    // ALB dynamic LCUs (~1 LCU per 800 origin RPS @ $0.008/LCU-hr)
-    const lcus = Math.max(1, originRps / 800);
-    loadBalancerMonthly = lcus * 0.008 * HOURS_PER_MONTH;
+    // ALB base ($32.94) + dynamic LCUs (~1 LCU per 250 origin RPS @ $0.008/LCU-hr)
+    const lcus = Math.max(1, originRps / 250);
+    loadBalancerMonthly = 32.94 + lcus * 0.008 * HOURS_PER_MONTH;
     loadBalancerLabel = `2x ALB (${Math.round(lcus)} LCUs)`;
   } else if (provider === "GCP") {
-    // Global ALB: billed per GB processed to origin
-    const lbDataCost = originEgressGb * 0.006;
-    loadBalancerMonthly = Math.max(8, lbDataCost);
+    // Global ALB base ($18.30) + data processed to origin ($0.008/GB)
+    const lbDataCost = originEgressGb * 0.008;
+    loadBalancerMonthly = 18.30 + lbDataCost;
     loadBalancerLabel = `Global External ALB`;
   } else {
-    // Azure App Gateway Capacity Units
-    const cus = Math.max(1, originRps / 900);
-    loadBalancerMonthly = cus * 0.008 * HOURS_PER_MONTH;
-    loadBalancerLabel = `App Gateway (${Math.round(cus)} CUs)`;
+    // Azure App Gateway base ($180) + Capacity Units (~1 CU per 300 origin RPS @ $0.008/CU-hr)
+    const cus = Math.max(1, originRps / 300);
+    loadBalancerMonthly = 180.0 + cus * 0.008 * HOURS_PER_MONTH;
+    loadBalancerLabel = `App Gateway v2 (${Math.round(cus)} CUs)`;
   }
 
   const monthlyTotal = Math.round(computeMonthly + cdnMonthly + loadBalancerMonthly);
   const hourlyBurnRate = Number((monthlyTotal / HOURS_PER_MONTH).toFixed(2));
   const costPerMillionRequests = Number(
-    ((monthlyTotal / Math.max(1, totalMonthlyRequests / 1_000_000))).toFixed(3)
+    (monthlyTotal / Math.max(1, totalMonthlyRequests / 1_000_000)).toFixed(3)
   );
 
-  // Baseline cost without Edge CDN (100% traffic hits origin servers and direct internet egress)
-  const fullTrafficPods = Math.min(28, Math.max(1, Math.ceil(safeTraffic / 2800)));
+  // Baseline cost without Edge CDN (100% traffic hits origin servers, direct egress, and unshielded TLS balancers)
+  const fullTrafficPods = Math.min(28, Math.max(1, Math.ceil(safeTraffic / 2500)));
   const noCacheCompute = scalingMode === "HORIZONTAL"
-    ? fullTrafficPods * 31.0 + 73.0
+    ? fullTrafficPods * 68.0 + 73.2
     : computeMonthly * 2.5;
   // Direct origin internet egress without CDN volume tiering (~$0.085/GB)
   const noCacheOriginEgress = monthlyTotalGb * 0.085;
-  const noCacheLb = (safeTraffic / 800) * 0.008 * HOURS_PER_MONTH;
+  // Load balancers handling 100% unshielded TLS connection handshakes
+  const noCacheLcus = Math.max(1, safeTraffic / 25);
+  const noCacheLb = 32.94 + Math.min(noCacheLcus, 3500) * 0.008 * HOURS_PER_MONTH;
   const noCacheBaselineTotal = Math.round(noCacheCompute + noCacheOriginEgress + noCacheLb);
   const edgeSavingsMonthly = Math.max(0, Math.round(noCacheBaselineTotal - monthlyTotal));
 
