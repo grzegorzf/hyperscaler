@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "test": "node --test --experimental-strip-types --import ./tests/loader.mjs tests/physics.test.ts tests/engine.test.ts tests/layout.test.ts"
