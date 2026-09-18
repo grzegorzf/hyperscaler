@@ -91,3 +91,24 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .animate-beacon {
   animation: beacon-pulse 2.5s infinite ease-in-out;
 }
+
+/* Mobile Bottom Sheet Animations */
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Mobile safe area padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 12px);
+}

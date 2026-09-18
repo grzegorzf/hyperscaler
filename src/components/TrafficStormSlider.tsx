@@ -6,15 +6,17 @@ interface TrafficStormSliderProps {
   trafficRps: number;
   multiplier: number;
   onMultiplierChange: (mult: number) => void;
+  className?: string;
 }
 
 export const TrafficStormSlider: React.FC<TrafficStormSliderProps> = ({
   trafficRps,
   multiplier,
   onMultiplierChange,
+  className = "",
 }) => {
   return (
-    <div className="glass-panel rounded-xl px-5 py-3.5 border border-amber-500/30 text-xs font-mono w-[300px]">
+    <div className={`glass-panel rounded-xl px-5 py-3.5 border border-amber-500/30 text-xs font-mono w-full max-w-[340px] md:w-[300px] ${className}`}>
       <div className="flex justify-between items-center mb-2">
         <span className="text-[10px] text-amber-400/90 tracking-wider uppercase font-semibold flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />

@@ -76,4 +76,31 @@ describe("Layout & Topology Geometry", () => {
       );
     }
   });
+
+  it("maintains clean topology separation on mobile portrait screens", () => {
+    const mobile = computeLayout(390, 844);
+
+    // Clients < CDN PoPs
+    assert.ok(mobile.clients.x < mobile.cdnPops[0].x);
+
+    // CDN PoPs < Load Balancers
+    mobile.cdnPops.forEach((cdn) => {
+      assert.ok(cdn.x < mobile.loadBalancers[0].x);
+    });
+
+    // Load Balancers strictly left of Compute Stage with positive clearance
+    mobile.loadBalancers.forEach((lb) => {
+      assert.ok(lb.x < mobile.computeStage.x);
+      assert.ok(mobile.computeStage.x - lb.x > 8, "Must maintain at least 8px clearance before compute stage");
+    });
+
+    // Compute stage is properly bounded on mobile
+    assert.ok(mobile.computeStage.x + mobile.computeStage.w <= 390);
+
+    // Valid pod targeting on mobile
+    for (let i = 0; i < 8; i++) {
+      const target = getComputeNodeTarget(mobile, true, i, 8);
+      assert.ok(target.x >= mobile.computeStage.x && target.x <= mobile.computeStage.x + mobile.computeStage.w);
+    }
+  });
 });

@@ -17,8 +17,8 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
   const isSuper = node.role === "SUPER_NODE";
 
   return (
-    <div className="absolute bottom-20 left-1/2 -translate-x-1/2 z-30 pointer-events-auto">
-      <div className="glass-panel rounded-2xl p-5 border border-cyan-400/40 shadow-[0_0_30px_rgba(0,240,255,0.25)] min-w-[340px] font-mono text-xs">
+    <div className="absolute bottom-24 md:bottom-20 left-1/2 -translate-x-1/2 z-40 pointer-events-auto">
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 border border-cyan-400/40 shadow-[0_0_30px_rgba(0,240,255,0.25)] w-[92vw] max-w-[360px] font-mono text-xs">
         <div className="flex justify-between items-center pb-3 border-b border-cyan-500/20 mb-3">
           <div className="flex items-center gap-2">
             <div
@@ -42,7 +42,7 @@ export const NodeInspectorModal: React.FC<NodeInspectorModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-100 px-2 py-0.5 text-sm"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-slate-100 hover:bg-white/10 text-base touch-manipulation"
           >
             ✕
           </button>

@@ -5,16 +5,18 @@ import React from "react";
 interface CdnSliderProps {
   cacheHitRate: number;
   onCacheRateChange: (rate: number) => void;
+  className?: string;
 }
 
 export const CdnSlider: React.FC<CdnSliderProps> = ({
   cacheHitRate,
   onCacheRateChange,
+  className = "",
 }) => {
   const percent = Math.round(cacheHitRate * 100);
 
   return (
-    <div className="glass-panel rounded-xl px-5 py-3.5 border border-emerald-500/30 text-xs font-mono w-[300px]">
+    <div className={`glass-panel rounded-xl px-5 py-3.5 border border-emerald-500/30 text-xs font-mono w-full max-w-[340px] md:w-[300px] ${className}`}>
       <div className="flex justify-between items-center mb-2">
         <span className="text-[10px] text-emerald-400 tracking-wider uppercase font-semibold flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />

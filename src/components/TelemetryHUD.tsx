@@ -27,7 +27,9 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, clas
     .join(" ");
 
   return (
-    <div className={`glass-panel rounded-xl px-5 py-4 border border-cyan-500/30 flex items-center gap-6 text-xs font-mono pointer-events-auto ${className}`}>
+    <div
+      className={`glass-panel rounded-xl p-4 md:px-5 md:py-4 border border-cyan-500/30 grid grid-cols-2 sm:grid-cols-3 md:flex md:items-center gap-4 md:gap-6 text-xs font-mono pointer-events-auto ${className}`}
+    >
         {/* 1. Region Latency */}
         <div className="flex flex-col">
           <span className="text-[10px] text-slate-400 tracking-wider uppercase">Region Latency</span>
@@ -40,7 +42,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, clas
           <span className="text-[9px] text-slate-500">p99: {state.latencyP99Ms}ms</span>
         </div>
 
-        <div className="w-[1px] h-8 bg-cyan-500/20" />
+        <div className="hidden md:block w-[1px] h-8 bg-cyan-500/20" />
 
         {/* 2. Network Throughput Sparkline */}
         <div className="flex flex-col">
@@ -62,7 +64,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, clas
           </div>
         </div>
 
-        <div className="w-[1px] h-8 bg-cyan-500/20" />
+        <div className="hidden md:block w-[1px] h-8 bg-cyan-500/20" />
 
         {/* 3. Active Nodes */}
         <div className="flex flex-col">
@@ -78,7 +80,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, clas
           <span className="text-[9px] text-emerald-400">Auto-Scale: {state.autoScalingEnabled ? "ON" : "OFF"}</span>
         </div>
 
-        <div className="w-[1px] h-8 bg-cyan-500/20" />
+        <div className="hidden md:block w-[1px] h-8 bg-cyan-500/20" />
 
         {/* 4. CPU Util. Segmented Bars */}
         <div className="flex flex-col min-w-[110px]">
@@ -122,7 +124,7 @@ export const TelemetryHUD: React.FC<TelemetryHUDProps> = ({ state, history, clas
           </div>
         </div>
 
-        <div className="w-[1px] h-8 bg-cyan-500/20" />
+        <div className="hidden md:block w-[1px] h-8 bg-cyan-500/20" />
 
         {/* 5. Health Status Beacon */}
         <div className="flex items-center gap-2">

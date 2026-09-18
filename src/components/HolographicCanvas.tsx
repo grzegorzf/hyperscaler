@@ -143,14 +143,9 @@ export const HolographicCanvas: React.FC<HolographicCanvasProps> = ({
     };
   }, []);
 
-  // Click handler to inspect specific clicked node or compute cluster
-  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const layout = computeLayout(rect.width, rect.height);
+  // Shared hit-testing logic for inspecting nodes on click or touch
+  const inspectNodeAt = (x: number, y: number, w: number, h: number) => {
+    const layout = computeLayout(w, h);
     const cs = layout.computeStage;
 
     if (x >= cs.x && x <= cs.x + cs.w && y >= cs.y && y <= cs.y + cs.h) {
@@ -189,11 +184,28 @@ export const HolographicCanvas: React.FC<HolographicCanvasProps> = ({
     onSelectNode(null);
   };
 
+  const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    inspectNodeAt(e.clientX - rect.left, e.clientY - rect.top, rect.width, rect.height);
+  };
+
+  const handleCanvasTouch = (e: React.TouchEvent<HTMLCanvasElement>) => {
+    if (e.changedTouches.length === 0) return;
+    const touch = e.changedTouches[0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    inspectNodeAt(touch.clientX - rect.left, touch.clientY - rect.top, rect.width, rect.height);
+  };
+
   return (
     <canvas
       ref={canvasRef}
       onClick={handleCanvasClick}
-      className="absolute inset-0 w-full h-full cursor-crosshair"
+      onTouchEnd={handleCanvasTouch}
+      className="absolute inset-0 w-full h-full cursor-crosshair touch-manipulation"
     />
   );
 };

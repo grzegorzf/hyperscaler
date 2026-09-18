@@ -18,12 +18,14 @@ interface CloudCostHUDProps {
   provider: CloudProvider;
   onProviderChange: (provider: CloudProvider) => void;
   state: ClusterState;
+  className?: string;
 }
 
 export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
   provider,
   onProviderChange,
   state,
+  className = "",
 }) => {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -64,7 +66,7 @@ export const CloudCostHUD: React.FC<CloudCostHUDProps> = ({
 
   return (
     <div
-      className={`glass-panel rounded-xl px-5 py-4 border ${providerTheme.border} flex flex-col gap-3 font-mono text-xs w-[420px] transition-all duration-300 pointer-events-auto`}
+      className={`glass-panel rounded-xl px-4 py-3.5 md:px-5 md:py-4 border ${providerTheme.border} flex flex-col gap-3 font-mono text-xs w-full max-w-[420px] transition-all duration-300 pointer-events-auto ${className}`}
     >
       {/* 1. Provider Switch Bar */}
       <div className="flex items-center justify-between">

@@ -10,6 +10,7 @@ import { CdnSlider } from "@/components/CdnSlider";
 import { ChaosControl } from "@/components/ChaosControl";
 import { NodeInspectorModal } from "@/components/NodeInspectorModal";
 import { CloudCostHUD } from "@/components/CloudCostHUD";
+import { MobileDrawer } from "@/components/MobileDrawer";
 import type { CloudProvider } from "@/lib/simulation/cloudCosts";
 
 export default function HyperscalerPage() {
@@ -109,6 +110,36 @@ export default function HyperscalerPage() {
             </span>
           </div>
         </div>
+
+        {/* Mobile Quick Status Header */}
+        <div className="flex md:hidden items-center gap-2 font-mono text-[10px]">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-cyan-500/20">
+            <div
+              className={`w-1.5 h-1.5 rounded-full animate-beacon ${
+                state.systemHealth === "NOMINAL"
+                  ? "bg-emerald-400 shadow-[0_0_6px_#10b981]"
+                  : state.systemHealth === "DEGRADED"
+                  ? "bg-amber-400 shadow-[0_0_6px_#f59e0b]"
+                  : "bg-rose-500 shadow-[0_0_8px_#ef4444]"
+              }`}
+            />
+            <span className="font-bold text-cyan-400">
+              {(state.trafficRps / 1000).toFixed(0)}k req/s
+            </span>
+            <span className="text-slate-600">|</span>
+            <span
+              className={`font-bold ${
+                cloudProvider === "AWS"
+                  ? "text-amber-400"
+                  : cloudProvider === "GCP"
+                  ? "text-blue-400"
+                  : "text-sky-400"
+              }`}
+            >
+              {cloudProvider}
+            </span>
+          </div>
+        </div>
       </header>
 
       {/* 2. Central 3D Holographic Canvas Viewport */}
@@ -116,8 +147,8 @@ export default function HyperscalerPage() {
         {/* The 60 FPS Canvas Engine */}
         <HolographicCanvas state={state} onSelectNode={setSelectedNode} />
 
-        {/* Top-Right Telemetry & Cost Modeling Deck */}
-        <div className="absolute top-5 right-6 z-20 flex flex-col items-end gap-3 pointer-events-auto">
+        {/* Desktop Top-Right Telemetry & Cost Modeling Deck */}
+        <div className="hidden md:flex absolute top-5 right-6 z-20 flex-col items-end gap-3 pointer-events-auto">
           <TelemetryHUD state={state} history={throughputHistory} />
           <CloudCostHUD
             provider={cloudProvider}
@@ -126,8 +157,8 @@ export default function HyperscalerPage() {
           />
         </div>
 
-        {/* Left Interactive Control Dock */}
-        <div className="absolute bottom-6 left-6 z-20 flex flex-col gap-3 pointer-events-auto">
+        {/* Desktop Left Interactive Control Dock */}
+        <div className="hidden md:flex absolute bottom-6 left-6 z-20 flex-col gap-3 pointer-events-auto">
           {/* Traffic Storm Multiplier */}
           <TrafficStormSlider
             trafficRps={state.trafficRps}
@@ -160,8 +191,8 @@ export default function HyperscalerPage() {
           onClose={() => setSelectedNode(null)}
         />
 
-        {/* Bottom-Right Legend */}
-        <div className="absolute bottom-6 right-6 z-20 glass-panel rounded-xl px-4 py-2.5 border border-cyan-500/20 flex items-center gap-5 text-[10px] font-mono text-slate-400 pointer-events-auto">
+        {/* Desktop Bottom-Right Legend */}
+        <div className="hidden md:flex absolute bottom-6 right-6 z-20 glass-panel rounded-xl px-4 py-2.5 border border-cyan-500/20 items-center gap-5 text-[10px] font-mono text-slate-400 pointer-events-auto">
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#00f0ff]" />
             <span>Edge Hit (5ms)</span>
@@ -175,6 +206,19 @@ export default function HyperscalerPage() {
             <span>Dropped / Throttled</span>
           </div>
         </div>
+
+        {/* Mobile Interactive Action Dock & Bottom Sheet */}
+        <MobileDrawer
+          state={state}
+          throughputHistory={throughputHistory}
+          trafficMultiplier={trafficMultiplier}
+          onMultiplierChange={handleMultiplierChange}
+          onCacheRateChange={handleCacheRateChange}
+          onScaleChange={updateScaling}
+          onChaosToggle={triggerChaos}
+          cloudProvider={cloudProvider}
+          onProviderChange={setCloudProvider}
+        />
       </div>
     </main>
   );

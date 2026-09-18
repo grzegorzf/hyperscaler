@@ -11,16 +11,18 @@ interface ScalingControlProps {
     delta?: number,
     cores?: number
   ) => void;
+  className?: string;
 }
 
 export const ScalingControl: React.FC<ScalingControlProps> = ({
   state,
   onScaleChange,
+  className = "",
 }) => {
   const isHorizontal = state.scalingMode === "HORIZONTAL";
 
   return (
-    <div className="glass-panel rounded-xl px-5 py-3.5 border border-cyan-500/30 text-xs font-mono w-[320px]">
+    <div className={`glass-panel rounded-xl px-5 py-3.5 border border-cyan-500/30 text-xs font-mono w-full max-w-[340px] md:w-[320px] ${className}`}>
       <div className="flex justify-between items-center mb-2.5">
         <span className="text-[10px] text-cyan-400 tracking-wider uppercase font-semibold">
           Scaling Architecture

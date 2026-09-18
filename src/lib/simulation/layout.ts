@@ -1,10 +1,48 @@
 import type { Point2D, SimulationLayout } from "./types";
 
 export function computeLayout(w: number, h: number): SimulationLayout {
+  const isMobile = w < 768;
   const tableCenterX = w * 0.50;
   const tableCenterY = h * 0.50;
-  const tableW = Math.min(w * 0.94, 1400);
-  const tableH = Math.min(h * 0.82, 800);
+  const tableW = Math.min(w * (isMobile ? 0.96 : 0.94), 1400);
+  const tableH = Math.min(h * (isMobile ? 0.86 : 0.82), 800);
+
+  if (isMobile) {
+    // Proportional mobile layout optimized for portrait aspect ratios
+    const csWidth = tableW * 0.40;
+    const csCenterX = tableCenterX + tableW * 0.28;
+    return {
+      table: {
+        cx: tableCenterX,
+        cy: tableCenterY,
+        w: tableW,
+        h: tableH,
+        x: tableCenterX - tableW / 2,
+        y: tableCenterY - tableH / 2,
+      },
+      clients: {
+        x: tableCenterX - tableW * 0.42,
+        y: tableCenterY - tableH * 0.16,
+      },
+      cdnPops: [
+        { label: "US-EAST", x: tableCenterX - tableW * 0.24, y: tableCenterY - tableH * 0.24 },
+        { label: "EU-WEST", x: tableCenterX - tableW * 0.16, y: tableCenterY - tableH * 0.07 },
+        { label: "AP-SOUTH", x: tableCenterX - tableW * 0.10, y: tableCenterY + tableH * 0.12 },
+      ],
+      loadBalancers: [
+        { label: "GLB-1", x: tableCenterX + tableW * 0.03, y: tableCenterY - tableH * 0.10 },
+        { label: "ALB-2", x: tableCenterX + tableW * 0.05, y: tableCenterY + tableH * 0.06 },
+      ],
+      computeStage: {
+        cx: csCenterX,
+        cy: tableCenterY + tableH * 0.02,
+        w: csWidth,
+        h: tableH * 0.65,
+        x: csCenterX - csWidth / 2,
+        y: tableCenterY + tableH * 0.02 - (tableH * 0.65) / 2,
+      },
+    };
+  }
 
   return {
     table: {
