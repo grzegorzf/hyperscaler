@@ -42,6 +42,7 @@ if [ -n "$COMPOSE_CMD" ]; then
   echo -e "${GREEN}${BOLD}============================================================${NC}"
   echo -e "To view logs: ${BOLD}${COMPOSE_CMD} logs -f${NC}"
   echo -e "To stop:      ${BOLD}${COMPOSE_CMD} down${NC}"
+  echo -e "To purge all: ${BOLD}./delete.sh${NC}"
   echo ""
 else
   echo -e "${AMBER}Docker not found or inactive. Running via pnpm dev...${NC}"

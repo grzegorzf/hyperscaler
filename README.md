@@ -171,6 +171,12 @@ docker compose up --build -d
 ```
 Access the simulator at [http://localhost:3000](http://localhost:3000).
 
+### 5. Docker Cleanup & Purge
+```bash
+./delete.sh
+```
+Stops containers and removes all associated images, volumes, and dangling build cache.
+
 ---
 
 ## 🌐 Deploying to GitHub Pages (1-Click)
