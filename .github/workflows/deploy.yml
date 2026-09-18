@@ -57,11 +57,11 @@ jobs:
       - name: Run automated test suite
         run: pnpm test
 
-      - name: Build static export
-        run: pnpm build
-
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
+      - name: Build static export
+        run: pnpm build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
