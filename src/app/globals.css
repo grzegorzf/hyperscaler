@@ -206,3 +206,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .pb-safe {
   padding-bottom: env(safe-area-inset-bottom, 12px);
 }
+
+/* Draggable HUD Utilities */
+.draggable-handle {
+  touch-action: none;
+  cursor: grab;
+}
+
+.draggable-handle:active {
+  cursor: grabbing;
+}
+
+.will-change-transform {
+  will-change: transform;
+}

@@ -22,7 +22,7 @@ import { generateArchitectureInsights } from "@/lib/simulation/advisor";
 import { calculateCarbonFootprint } from "@/lib/simulation/carbonFootprint";
 import { generateArchitectureReportMarkdown } from "@/lib/simulation/reportExporter";
 import type { ArchitectureScenario } from "@/lib/simulation/scenarios";
-import { Scale, FileText, MonitorPlay } from "lucide-react";
+import { Scale, FileText, MonitorPlay, RotateCcw } from "lucide-react";
 import {
   triggerHaptic,
   requestWakeLock,
@@ -31,6 +31,8 @@ import {
 } from "@/lib/browser/webApis";
 import { safeStartViewTransition } from "@/lib/browser/viewTransitions";
 import { useClusterBroadcast } from "@/hooks/useClusterBroadcast";
+import { DraggablePanel } from "@/components/DraggablePanel";
+import { clearStoredLayout } from "@/lib/browser/draggableMath";
 
 export default function HyperscalerPage() {
   const {
@@ -242,6 +244,14 @@ export default function HyperscalerPage() {
     safeStartViewTransition(() => setSelectedNode(node));
   };
 
+  const handleResetHudLayout = () => {
+    triggerHaptic("medium");
+    clearStoredLayout();
+    safeStartViewTransition(() => {
+      window.dispatchEvent(new CustomEvent("hyperscaler:reset-hud-layout"));
+    });
+  };
+
   return (
     <main className="relative w-screen h-screen bg-[#06090e] overflow-hidden flex flex-col font-sans">
       {/* 1. Header Bar */}
@@ -300,6 +310,16 @@ export default function HyperscalerPage() {
             >
               <MonitorPlay className={`w-3.5 h-3.5 ${wakeLockActive ? "text-amber-400 animate-pulse" : "text-slate-400"}`} />
               <span>{wakeLockActive ? "Kiosk On" : "Kiosk"}</span>
+            </button>
+
+            {/* Reset HUD Layout */}
+            <button
+              onClick={handleResetHudLayout}
+              className="h-9 px-2.5 rounded-lg border border-transparent hover:border-slate-700/60 bg-transparent hover:bg-white/5 text-slate-400 hover:text-slate-200 flex items-center gap-1.5 font-mono text-xs transition-all active:scale-95 cursor-pointer"
+              title="Reset all draggable HUD panels to their default positions"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden 2xl:inline">Reset HUD</span>
             </button>
           </div>
         </div>
@@ -387,58 +407,99 @@ export default function HyperscalerPage() {
         {/* The 60 FPS Canvas Engine */}
         <HolographicCanvas state={state} onSelectNode={handleSelectNode} />
 
-        {/* Live Senior Cloud Architect Advisory Ticker */}
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 w-[92%] max-w-xl pointer-events-auto">
+        {/* Draggable Live Senior Cloud Architect Advisory Ticker */}
+        <DraggablePanel
+          id="architect-advisor"
+          title="Architect Advisory"
+          defaultPosition={{ x: 420, y: 68 }}
+          className="w-[92%] max-w-xl"
+        >
           <ArchitectAdvisorBanner insights={insights} />
-        </div>
+        </DraggablePanel>
 
-        {/* Desktop Top-Right Telemetry & Cost Modeling Deck */}
-        <div className="hidden md:flex absolute top-14 right-6 z-20 flex-col items-end gap-3 pointer-events-auto max-h-[calc(100vh-140px)] overflow-y-auto pr-1">
-          <TelemetryHUD state={state} history={throughputHistory} />
+        {/* Draggable Telemetry HUD */}
+        <DraggablePanel
+          id="telemetry-hud"
+          title="Telemetry Engine"
+          defaultPosition={{ x: 2500, y: 68 }}
+          className="w-full max-w-[420px]"
+        >
+          <TelemetryHUD state={state} history={throughputHistory} className="w-full" />
+        </DraggablePanel>
+
+        {/* Draggable Cloud Cost Modeling HUD */}
+        <DraggablePanel
+          id="cloud-cost-hud"
+          title="Multi-Cloud Cost Model"
+          defaultPosition={{ x: 2500, y: 220 }}
+          className="w-full max-w-[420px]"
+        >
           <CloudCostHUD
             provider={cloudProvider}
             onProviderChange={handleProviderChange}
             onOpenArbitrage={handleOpenArbitrage}
             state={state}
+            className="w-full"
           />
+        </DraggablePanel>
+
+        {/* Draggable SRE Telemetry & 99.99% SLO Sparklines */}
+        <DraggablePanel
+          id="telemetry-sparklines"
+          title="SRE SLO & Sparklines"
+          defaultPosition={{ x: 2500, y: 490 }}
+          className="w-full max-w-[420px]"
+        >
           <TelemetrySparklines
             state={state}
             hourlyBurnRate={activeCosts.hourlyBurnRate}
+            className="w-full"
           />
-        </div>
+        </DraggablePanel>
 
-        {/* Desktop Left Interactive Control Dock */}
-        <div className="hidden md:flex absolute bottom-6 left-6 z-20 flex-col gap-3 pointer-events-auto">
-          {/* Scenario Quick Selector (if screen is not large enough for header) */}
-          <div className="lg:hidden">
-            <ScenarioSelector onSelectScenario={handleSelectScenario} />
+        {/* Draggable Desktop Left Interactive Control Dock */}
+        <DraggablePanel
+          id="control-dock"
+          title="Cluster Control Dock"
+          defaultPosition={{ x: 20, y: 300 }}
+          className="w-[340px] md:w-[320px]"
+        >
+          <div className="flex flex-col gap-2.5">
+            {/* Scenario Quick Selector (if screen is not large enough for header) */}
+            <div className="lg:hidden">
+              <ScenarioSelector onSelectScenario={handleSelectScenario} />
+            </div>
+
+            {/* Traffic Storm Multiplier */}
+            <TrafficStormSlider
+              trafficRps={state.trafficRps}
+              multiplier={trafficMultiplier}
+              onMultiplierChange={handleMultiplierChange}
+              className="w-full"
+            />
+
+            {/* Edge CDN Cache Ratio */}
+            <CdnSlider
+              cacheHitRate={state.edgeCacheHitRate}
+              onCacheRateChange={handleCacheRateChange}
+              className="w-full"
+            />
+
+            {/* Scaling Architecture Toggle */}
+            <ScalingControl
+              state={state}
+              onScaleChange={handleScalingChange}
+              className="w-full"
+            />
+
+            {/* Chaos Monkey Outage Trigger */}
+            <ChaosControl
+              chaosActive={state.chaosActive}
+              onChaosToggle={handleChaosToggle}
+              className="w-full"
+            />
           </div>
-
-          {/* Traffic Storm Multiplier */}
-          <TrafficStormSlider
-            trafficRps={state.trafficRps}
-            multiplier={trafficMultiplier}
-            onMultiplierChange={handleMultiplierChange}
-          />
-
-          {/* Edge CDN Cache Ratio */}
-          <CdnSlider
-            cacheHitRate={state.edgeCacheHitRate}
-            onCacheRateChange={handleCacheRateChange}
-          />
-
-          {/* Scaling Architecture Toggle */}
-          <ScalingControl
-            state={state}
-            onScaleChange={handleScalingChange}
-          />
-
-          {/* Chaos Monkey Outage Trigger */}
-          <ChaosControl
-            chaosActive={state.chaosActive}
-            onChaosToggle={handleChaosToggle}
-          />
-        </div>
+        </DraggablePanel>
 
         {/* Selected Node Details Drawer */}
         <NodeInspectorModal
