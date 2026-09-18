@@ -69,8 +69,8 @@ describe("Simulation Engine", () => {
       })),
     };
 
-    // Heavy traffic: 125,000 RPS (should jump to 64 cores)
-    const highLoad = { ...verticalInitial, trafficRps: 125000 };
+    // Heavy traffic with origin load > 65k RPS (should jump to 64 cores)
+    const highLoad = { ...verticalInitial, trafficRps: 125000, edgeCacheHitRate: 0.20 };
     const step = stepSimulation(highLoad, 8);
 
     assert.strictEqual(step.updatedManualCores, 64);
@@ -124,11 +124,23 @@ describe("Simulation Engine", () => {
     const deltaInc = applyScalingCommand(horiz.nextState, "HORIZONTAL", false, 32, 3);
     assert.strictEqual(deltaInc.nextState.nodes.length, 11);
 
-    // 4. Pod count clamps within [3, 28]
+    // 4. Pod count clamps within [0, 28] (allowing complete scale-to-zero)
     const clampedMax = applyScalingCommand(horiz.nextState, "HORIZONTAL", false, 32, 50);
     assert.strictEqual(clampedMax.nextState.nodes.length, 28);
 
     const clampedMin = applyScalingCommand(horiz.nextState, "HORIZONTAL", false, 32, -50);
-    assert.strictEqual(clampedMin.nextState.nodes.length, 3);
+    assert.strictEqual(clampedMin.nextState.nodes.length, 0);
+  });
+
+  it("gradually scales horizontal pods down to 0 at zero traffic", () => {
+    const initial = createInitialState();
+    let current = { ...initial, trafficRps: 0 };
+    // Step simulation 8 times to descale 8 pods down to 0
+    for (let i = 0; i < 8; i++) {
+      current = stepSimulation(current, 16).nextState;
+    }
+    assert.strictEqual(current.nodes.length, 0, "Cluster should scale to 0 pods");
+    assert.strictEqual(current.totalNodes, 0);
+    assert.strictEqual(current.systemHealth, "NOMINAL");
   });
 });

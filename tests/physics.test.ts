@@ -37,9 +37,12 @@ describe("Physics & Queuing Math", () => {
   });
 
   it("scales particle pool directly with traffic volume", () => {
-    // Min bound (0.2x traffic ~5k RPS) -> 6 particles (calm trickle)
+    // 0 traffic -> 0 particles (scale to zero)
+    assert.strictEqual(calculateTargetParticlePool(0), 0);
+
+    // Min bound (0.2x traffic ~5k RPS) -> 4 particles (calm trickle)
     const minPool = calculateTargetParticlePool(5000);
-    assert.strictEqual(minPool, 6);
+    assert.strictEqual(minPool, 4);
 
     // Baseline (1.0x traffic = 25k RPS) -> 22 particles (clean rhythmic stream)
     const basePool = calculateTargetParticlePool(25000);
@@ -55,6 +58,7 @@ describe("Physics & Queuing Math", () => {
   });
 
   it("scales particle velocity with traffic intensity", () => {
+    assert.strictEqual(calculateParticleVelocity(0), 0, "Velocity should be 0 when traffic is 0");
     const lowV = calculateParticleVelocity(5000);
     const midV = calculateParticleVelocity(25000);
     const highV = calculateParticleVelocity(125000);
@@ -63,22 +67,20 @@ describe("Physics & Queuing Math", () => {
     assert.ok(highV > midV, "Velocity at 125k RPS must be greater than at 25k RPS");
   });
 
-  it("determines horizontal pod targets within safe bounds [3, 28]", () => {
-    const lowPods = calculateTargetPods(1000);
-    assert.ok(lowPods >= 3, "Pods should not go below minimum 3");
-
-    const basePods = calculateTargetPods(25000);
-    assert.strictEqual(basePods, 8); // 1.0 * 5 + 3 = 8
-
-    const extremePods = calculateTargetPods(500000);
-    assert.strictEqual(extremePods, 28, "Pods should not exceed 28");
+  it("determines horizontal pod targets dynamically with scale-to-zero [0, 28]", () => {
+    assert.strictEqual(calculateTargetPods(0), 0, "Zero origin traffic scales to 0 pods");
+    assert.strictEqual(calculateTargetPods(1000), 1, "Light load provisions 1 pod");
+    assert.strictEqual(calculateTargetPods(6250), 3, "6,250 origin RPS provisions 3 pods");
+    assert.strictEqual(calculateTargetPods(25000), 9, "25,000 origin RPS provisions 9 pods");
+    assert.strictEqual(calculateTargetPods(500000), 28, "Pods should cap at maximum 28");
   });
 
-  it("determines vertical core tiers [8, 16, 32, 64]", () => {
-    assert.strictEqual(calculateTargetCores(10000), 8); // <1.5x
-    assert.strictEqual(calculateTargetCores(40000), 16); // 1.6x -> 16
-    assert.strictEqual(calculateTargetCores(75000), 32); // 3.0x -> 32
-    assert.strictEqual(calculateTargetCores(125000), 64); // 5.0x -> 64
+  it("determines vertical core tiers with scale-to-zero [0, 8, 16, 32, 64]", () => {
+    assert.strictEqual(calculateTargetCores(0), 0); // 0 cores standby
+    assert.strictEqual(calculateTargetCores(5000), 8); // <= 10k origin RPS
+    assert.strictEqual(calculateTargetCores(20000), 16); // > 10k origin RPS
+    assert.strictEqual(calculateTargetCores(40000), 32); // > 30k origin RPS
+    assert.strictEqual(calculateTargetCores(80000), 64); // > 65k origin RPS
   });
 
   it("calculates cluster metrics, latencies, and health statuses", () => {

@@ -11,6 +11,11 @@ export function spawnParticles(
   state: ClusterState,
   layout: SimulationLayout
 ): void {
+  if (state.trafficRps <= 0) {
+    particles.length = 0;
+    return;
+  }
+
   const mult = Math.max(0.2, state.trafficRps / BASE_TRAFFIC_RPS);
   const targetParticlePool = calculateTargetParticlePool(state.trafficRps);
 
@@ -127,8 +132,9 @@ export function updateAndDrawParticles(
       p.currY = targetLb.y + (targetPos.y - targetLb.y) * p.progress;
 
       if (p.progress >= 1) {
-        // Flash node load
-        nodeFlashes[targetNodeIdx] = 1.0;
+        if (nodeFlashes.length > 0) {
+          nodeFlashes[targetNodeIdx % nodeFlashes.length] = 1.0;
+        }
         particles.splice(i, 1);
         continue;
       }

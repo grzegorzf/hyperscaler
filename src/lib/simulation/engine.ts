@@ -59,11 +59,11 @@ export function stepSimulation(
 
   if (current.autoScalingEnabled) {
     if (isHoriz) {
-      const targetPods = calculateTargetPods(traffic);
+      const targetPods = calculateTargetPods(originRps);
       if (nodeCount < targetPods) nodeCount++;
       else if (nodeCount > targetPods) nodeCount--;
     } else {
-      activeCores = calculateTargetCores(traffic);
+      activeCores = calculateTargetCores(originRps);
       updatedManualCores = activeCores;
     }
   } else if (!isHoriz) {
@@ -99,10 +99,10 @@ export function stepSimulation(
         name: `vnode-tower-${i + 1}`,
         role: "SUPER_NODE",
         cpuCores: activeCores,
-        ramGb: activeCores * 4,
-        cpuUtilization: metrics.avgCpu,
-        ramUtilization: metrics.avgRam,
-        requestsHandledPerSec: Math.round(originRps / 4),
+        ramGb: Math.max(16, activeCores * 4),
+        cpuUtilization: activeCores > 0 ? metrics.avgCpu : 0,
+        ramUtilization: activeCores > 0 ? metrics.avgRam : 0,
+        requestsHandledPerSec: activeCores > 0 ? Math.round(originRps / 4) : 0,
         status: current.chaosActive
           ? "OVERLOADED"
           : metrics.avgCpu > 90
@@ -151,7 +151,7 @@ export function applyScalingCommand(
       name: `vnode-tower-${i + 1}`,
       role: "SUPER_NODE",
       cpuCores: cores,
-      ramGb: cores * 4,
+      ramGb: Math.max(16, cores * 4),
       cpuUtilization: prev.averageCpuPercent,
       ramUtilization: 48,
       requestsHandledPerSec: Math.round(prev.originIngressRps / 4),
@@ -161,7 +161,7 @@ export function applyScalingCommand(
     // Horizontal mode
     let count = prev.scalingMode === "VERTICAL" ? 8 : updatedNodes.length;
     if (nodeDelta) {
-      count = Math.max(3, Math.min(28, count + nodeDelta));
+      count = Math.max(0, Math.min(28, count + nodeDelta));
     }
     updatedNodes = Array.from({ length: count }, (_, i) => ({
       id: i + 1,

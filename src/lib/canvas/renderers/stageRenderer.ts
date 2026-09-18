@@ -24,8 +24,12 @@ export function drawComputeStageFrame(
   ctx.font = "bold 11px ui-monospace, monospace";
   ctx.textAlign = "left";
   const titleText = isHoriz
-    ? `HORIZONTAL AUTO-SCALING CLUSTER · ${nodeCount} PODS ACTIVE`
-    : `VERTICAL SCALING UPGRADES · ${coresPerTower} CORES PER TOWER`;
+    ? nodeCount === 0
+      ? "HORIZONTAL CLUSTER · SCALE-TO-ZERO (0 PODS ACTIVE)"
+      : `HORIZONTAL AUTO-SCALING CLUSTER · ${nodeCount} PODS ACTIVE`
+    : coresPerTower === 0
+      ? "VERTICAL SCALING · SLEEP STATE (0 CORES)"
+      : `VERTICAL SCALING UPGRADES · ${coresPerTower} CORES PER TOWER`;
   ctx.fillText(titleText, stage.x + 16, stage.y + 24);
   ctx.restore();
 }

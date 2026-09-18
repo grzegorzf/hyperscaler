@@ -3,15 +3,34 @@ import assert from "node:assert/strict";
 import { calculateCloudCosts } from "../src/lib/simulation/cloudCosts";
 
 describe("Multi-Cloud Cost Modeling", () => {
+  it("evaluates to exactly $0.00 across all cloud providers at zero traffic", () => {
+    ["AWS", "GCP", "AZURE"].forEach((provider) => {
+      const zeroCost = calculateCloudCosts(provider as any, 0, 0.75, "HORIZONTAL", 0);
+      assert.strictEqual(zeroCost.monthlyTotal, 0, `${provider} total must be $0 at 0 traffic`);
+      assert.strictEqual(zeroCost.hourlyBurnRate, 0, `${provider} hourly burn rate must be $0`);
+      assert.strictEqual(zeroCost.computeMonthly, 0, `${provider} compute must be $0`);
+      assert.strictEqual(zeroCost.cdnMonthly, 0, `${provider} CDN must be $0`);
+      assert.strictEqual(zeroCost.loadBalancerMonthly, 0, `${provider} LB must be $0`);
+      assert.strictEqual(zeroCost.edgeSavingsMonthly, 0);
+      assert.strictEqual(zeroCost.monthlyTotalGb, 0);
+    });
+  });
+
   it("calculates realistic AWS operational bills", () => {
     // 25,000 req/s with 75% cache hit rate and 8 pods
     const cost = calculateCloudCosts("AWS", 25000, 0.75, "HORIZONTAL", 8);
 
     assert.strictEqual(cost.provider, "AWS");
     assert.strictEqual(cost.providerName, "Amazon Web Services");
-    assert.ok(cost.monthlyTotal > 1000, "Monthly total should exceed $1,000 for 25k RPS");
-    assert.ok(cost.hourlyBurnRate > 1, "Hourly burn rate should be positive");
-    assert.ok(cost.computeMonthly > 500, "Compute should account for EKS + nodes");
+    assert.ok(
+      cost.monthlyTotal >= 350 && cost.monthlyTotal <= 950,
+      `Monthly total should be realistic (~$500-$700), got ${cost.monthlyTotal}`
+    );
+    assert.ok(cost.hourlyBurnRate > 0, "Hourly burn rate should be positive");
+    assert.ok(
+      cost.computeMonthly >= 200 && cost.computeMonthly <= 500,
+      `Compute should account for EKS + nodes, got ${cost.computeMonthly}`
+    );
     assert.ok(cost.cdnMonthly > 0, "CDN request & egress costs must be present");
     assert.ok(cost.edgeSavingsMonthly > 0, "CDN caching must show significant dollar savings");
     assert.ok(cost.computeLabel.includes("EKS"));

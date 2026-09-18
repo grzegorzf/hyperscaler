@@ -10,6 +10,43 @@ export function drawHorizontalCluster(
   nodeFlashes: number[],
   timestamp: number
 ): void {
+  if (nodes.length === 0) {
+    ctx.save();
+    const boxW = Math.min(stage.w - 40, 340);
+    const boxH = 88;
+    const boxX = stage.x + (stage.w - boxW) / 2;
+    const boxY = stage.y + (stage.h - boxH) / 2 + 10;
+
+    // Glowing standby container
+    ctx.fillStyle = "rgba(10, 25, 45, 0.75)";
+    ctx.strokeStyle = "rgba(0, 240, 255, 0.4)";
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, 8);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Pulsing text
+    const pulse = Math.sin(timestamp / 300) * 0.2 + 0.8;
+    ctx.fillStyle = `rgba(0, 240, 255, ${pulse})`;
+    ctx.font = "bold 12px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.fillText("STANDBY · SCALE-TO-ZERO", boxX + boxW / 2, boxY + 32);
+
+    ctx.fillStyle = "rgba(148, 163, 184, 0.9)";
+    ctx.font = "10px ui-monospace, monospace";
+    ctx.fillText("0 ACTIVE PODS · READY TO PROVISION", boxX + boxW / 2, boxY + 52);
+
+    ctx.fillStyle = "#10b981";
+    ctx.font = "bold 9px ui-monospace, monospace";
+    ctx.fillText("COMPUTE BURN RATE: $0.00 / HR", boxX + boxW / 2, boxY + 70);
+
+    ctx.restore();
+    return;
+  }
+
   const mult = Math.max(0.2, trafficRps / BASE_TRAFFIC_RPS);
   const total = Math.max(nodes.length, 3);
   const cols = total > 16 ? 5 : total > 9 ? 4 : 3;
