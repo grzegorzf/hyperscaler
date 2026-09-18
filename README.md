@@ -17,7 +17,7 @@
   <img src="https://img.shields.io/badge/TypeScript-5.9-blue?logo=typescript" alt="TypeScript 5" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3.4-38bdf8?logo=tailwindcss" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Node.js-22.x-green?logo=node.js" alt="Node.js 22" />
-  <img src="https://img.shields.io/badge/Tests-55%20Passing-brightgreen?logo=checkmarx" alt="55 Tests Passing" />
+  <img src="https://img.shields.io/badge/Tests-61%20Passing-brightgreen?logo=checkmarx" alt="61 Tests Passing" />
   <img src="https://img.shields.io/badge/License-MIT-amber" alt="License MIT" />
 </p>
 
@@ -68,6 +68,7 @@ Experience the tangible differences between **Horizontal Auto-Scaling** (Kuberne
 | **📳 Tactile Haptic Engine** | `triggerHaptic` | Physical vibration cadences for Chaos Monkey alarms, provider toggling, and traffic slider micro-ticks on supported mobile devices. |
 | **📱 Mobile Action Dock & Sheet** | `MobileDrawer` | Thumb-friendly bottom dock with expandable cybernetic glass sheet providing full feature access on mobile viewports. |
 | **🔍 Real-Time Node Inspector** | `NodeInspectorModal` | Touch or click any blade or tower to inspect core count, allocated RAM, CPU utilization, and requests/sec. |
+| **🖐️ Draggable HUD Panels** | `DraggablePanel` | Modular floating panels with Pointer Events Level 3, GPU-accelerated `translate3d`, viewport boundary clamping, and resilient `localStorage` coordinate persistence. |
 
 ---
 
@@ -139,10 +140,18 @@ hyperscaler/
 │   │   ├── ScalingControl.tsx       # Horizontal cluster vs Vertical tower toggle
 │   │   ├── CdnSlider.tsx            # Edge CDN cache ratio slider (0% - 98%)
 │   │   ├── ChaosControl.tsx         # Chaos monkey fault injection trigger
-│   │   └── NodeInspectorModal.tsx   # Live node telemetry inspection modal
+│   │   ├── NodeInspectorModal.tsx   # Live node telemetry inspection modal
+│   │   └── DraggablePanel.tsx       # Cybernetic draggable wrapper (Pointer Events L3 + GPU)
 │   ├── hooks/
-│   │   └── useSimulationStream.ts   # Reactive hook bridging state to simulation loop
+│   │   ├── useSimulationStream.ts   # Reactive hook bridging state to simulation loop
+│   │   ├── useDraggablePanel.ts     # Pointer capture drag physics & storage sync
+│   │   ├── useClusterBroadcast.ts   # BroadcastChannel multi-window cluster synchronization
+│   │   └── useMouseSpotlight.ts     # GPU radial gradient spotlight tracking
 │   └── lib/
+│       ├── browser/                 # Bleeding-edge browser APIs & physics wrappers
+│       │   ├── draggableMath.ts     # Viewport boundary clamping & persistent coordinates
+│       │   ├── viewTransitions.ts   # W3C View Transitions Level 2 morphing
+│       │   └── webApis.ts           # Haptics, Screen Wake Lock, GZIP CompressionStream
 │       ├── simulation/              # Pure mathematical simulation & FinOps libraries
 │       │   ├── types.ts             # ClusterState, ServerNode, SimulationLayout
 │       │   ├── physics.ts           # Little's Law, queuing math, particle dynamics
@@ -171,12 +180,14 @@ hyperscaler/
 │   ├── carbonFootprint.test.ts      # 3 tests: Net Zero, Scope 2 emissions, eco scoring
 │   ├── cloudArbitrage.test.ts       # 3 tests: Multi-cloud matrix, CUD discounts
 │   ├── cloudCosts.test.ts           # 7 tests: AWS/GCP/Azure pricing, scale-to-zero
+│   ├── draggable.test.ts            # 6 tests: boundary clamping, localStorage, corruption recovery
 │   ├── engine.test.ts               # 8 tests: pod replication, core tiers, chaos
 │   ├── layout.test.ts               # 5 tests: geometry, mobile bounds, collision
 │   ├── physics.test.ts              # 8 tests: traffic, queuing, particle velocity
 │   ├── reportExporter.test.ts       # 1 test: Markdown report generator verification
 │   ├── scenarios.test.ts            # 3 tests: enterprise scenarios configuration
 │   ├── sloTracker.test.ts           # 4 tests: SLO budget burn, sparkline paths
+│   ├── webApis.test.ts              # 8 tests: haptics, wake lock, compression, view transitions
 │   ├── loader.mjs                   # Node 22 ESM test loader registration
 │   └── resolver-hook.mjs            # Extensionless TypeScript import resolver
 ├── Dockerfile                       # Multi-stage lightweight Nginx container
@@ -209,7 +220,7 @@ Open [http://localhost:3000](http://localhost:3000) (or the port specified in te
 ```bash
 pnpm test
 ```
-All **47 unit tests across 10 suites** execute natively in **~0.8s** with zero external testing dependencies via Node 22 (`node:test`).
+All **61 unit tests across 18 suites** execute natively in **~0.9s** with zero external testing dependencies via Node 22 (`node:test`).
 
 ### 3. Type Checking
 ```bash
@@ -245,7 +256,7 @@ The repository includes an automated GitHub Actions deployment pipeline in [`.gi
 1. Push code to the `main` branch of `https://github.com/grzegorzf/hyperscaler`.
 2. In your GitHub repository, navigate to **Settings** → **Pages**.
 3. Under **Build and deployment** → **Source**, select **GitHub Actions**.
-4. Every push to `main` automatically runs typechecks, runs all 47 tests, compiles the static export, and publishes to **[https://grzegorzf.github.io/hyperscaler](https://grzegorzf.github.io/hyperscaler)**.
+4. Every push to `main` automatically runs typechecks, runs all 61 tests, compiles the static export, and publishes to **[https://grzegorzf.github.io/hyperscaler](https://grzegorzf.github.io/hyperscaler)**.
 5. The included [`next.config.ts`](next.config.ts) dynamically handles GitHub Pages `basePath` resolution.
 
 ---
