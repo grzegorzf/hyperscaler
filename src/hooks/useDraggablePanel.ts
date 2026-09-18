@@ -27,49 +27,50 @@ export function useDraggablePanel({
   const [isHydrated, setIsHydrated] = useState(false);
 
   const panelRef = useRef<HTMLDivElement | null>(null);
+  const isDraggingRef = useRef(false);
   const dragStartRef = useRef<{ pointerX: number; pointerY: number }>({ pointerX: 0, pointerY: 0 });
   const panelStartPosRef = useRef<{ x: number; y: number }>({ x: defaultPosition.x, y: defaultPosition.y });
   const positionRef = useRef<PanelPosition>(defaultPosition);
+  const isCollapsedRef = useRef(isCollapsed);
+  const boundsRef = useRef(bounds);
+  const defaultPosRef = useRef(defaultPosition);
+  const rafIdRef = useRef<number | null>(null);
 
-  // Keep positionRef in sync
+  // Keep refs synchronized without triggering re-runs
   positionRef.current = position;
+  isCollapsedRef.current = isCollapsed;
+  boundsRef.current = bounds;
+  defaultPosRef.current = defaultPosition;
 
-  // Hydrate from localStorage once mounted
+  // Hydrate from localStorage ONCE on mount (or if id changes)
   useEffect(() => {
     setIsHydrated(true);
     const stored = loadStoredLayout();
-    if (stored[id]) {
-      const panelEl = panelRef.current;
-      const width = panelEl?.offsetWidth || 360;
-      const height = panelEl?.offsetHeight || 200;
-      const clamped = clampPosition(
-        stored[id],
-        { width, height },
-        { width: window.innerWidth, height: window.innerHeight },
-        bounds
-      );
-      setPosition(clamped);
-      if (stored[id].isCollapsed !== undefined) {
-        setIsCollapsed(stored[id].isCollapsed!);
-      }
-    } else {
-      // Re-clamp default position to current viewport
-      const panelEl = panelRef.current;
-      const width = panelEl?.offsetWidth || 360;
-      const height = panelEl?.offsetHeight || 200;
-      const clamped = clampPosition(
-        defaultPosition,
-        { width, height },
-        { width: window.innerWidth, height: window.innerHeight },
-        bounds
-      );
-      setPosition(clamped);
-    }
-  }, [id, bounds, defaultPosition]);
+    const targetPos = stored[id] || defaultPosRef.current;
 
-  // Handle browser window resize clamping
+    const panelEl = panelRef.current;
+    const width = panelEl?.offsetWidth || 360;
+    const height = panelEl?.offsetHeight || 200;
+    const clamped = clampPosition(
+      targetPos,
+      { width, height },
+      { width: window.innerWidth, height: window.innerHeight },
+      boundsRef.current
+    );
+
+    setPosition(clamped);
+    positionRef.current = clamped;
+
+    if (targetPos.isCollapsed !== undefined) {
+      setIsCollapsed(targetPos.isCollapsed);
+      isCollapsedRef.current = targetPos.isCollapsed;
+    }
+  }, [id]);
+
+  // Handle browser window resize clamping (only when NOT actively dragging)
   useEffect(() => {
     const handleResize = () => {
+      if (isDraggingRef.current) return;
       const panelEl = panelRef.current;
       if (!panelEl) return;
       const width = panelEl.offsetWidth;
@@ -78,32 +79,46 @@ export function useDraggablePanel({
         positionRef.current,
         { width, height },
         { width: window.innerWidth, height: window.innerHeight },
-        bounds
+        boundsRef.current
       );
       if (clamped.x !== positionRef.current.x || clamped.y !== positionRef.current.y) {
         setPosition(clamped);
+        positionRef.current = clamped;
       }
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [bounds]);
+  }, []);
 
   // Global layout reset event listener
   useEffect(() => {
     const handleGlobalReset = () => {
-      setPosition(defaultPosition);
-      setIsCollapsed(defaultPosition.isCollapsed ?? false);
+      if (isDraggingRef.current) return;
+      const target = defaultPosRef.current;
+      setPosition(target);
+      positionRef.current = target;
+      setIsCollapsed(target.isCollapsed ?? false);
+      isCollapsedRef.current = target.isCollapsed ?? false;
     };
 
     window.addEventListener("hyperscaler:reset-hud-layout", handleGlobalReset);
     return () => window.removeEventListener("hyperscaler:reset-hud-layout", handleGlobalReset);
-  }, [defaultPosition]);
+  }, []);
 
-  // Pointer Events Level 3 Drag Handlers
+  // Clean up RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, []);
+
+  // Pointer Events Level 3 Drag Handlers with RAF throttling & window event binding
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLElement>) => {
-      // Only drag on primary button
+      // Only drag on primary mouse button or touch/pen
       if (e.button !== 0) return;
 
       // Don't drag if clicking an interactive control within the handle
@@ -113,81 +128,102 @@ export function useDraggablePanel({
       }
 
       e.preventDefault();
+
+      const pointerId = e.pointerId;
+      const handleEl = e.currentTarget;
       try {
-        e.currentTarget.setPointerCapture(e.pointerId);
+        handleEl.setPointerCapture(pointerId);
       } catch {
-        // Pointer capture fallback
+        // Fallback for environments lacking pointer capture
       }
 
       triggerHaptic("light");
+      isDraggingRef.current = true;
       setIsDragging(true);
 
       dragStartRef.current = { pointerX: e.clientX, pointerY: e.clientY };
       panelStartPosRef.current = { x: positionRef.current.x, y: positionRef.current.y };
-    },
-    []
-  );
 
-  const handlePointerMove = useCallback(
-    (e: React.PointerEvent<HTMLElement>) => {
-      if (!isDragging) return;
+      const onPointerMove = (moveEvt: PointerEvent) => {
+        if (!isDraggingRef.current) return;
 
-      const dx = e.clientX - dragStartRef.current.pointerX;
-      const dy = e.clientY - dragStartRef.current.pointerY;
+        const dx = moveEvt.clientX - dragStartRef.current.pointerX;
+        const dy = moveEvt.clientY - dragStartRef.current.pointerY;
 
-      const tentative = {
-        x: panelStartPosRef.current.x + dx,
-        y: panelStartPosRef.current.y + dy,
-        isCollapsed,
-      };
-
-      const panelEl = panelRef.current;
-      const width = panelEl?.offsetWidth || 360;
-      const height = panelEl?.offsetHeight || 200;
-
-      const clamped = clampPosition(
-        tentative,
-        { width, height },
-        { width: window.innerWidth, height: window.innerHeight },
-        bounds
-      );
-
-      setPosition(clamped);
-    },
-    [isDragging, bounds, isCollapsed]
-  );
-
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent<HTMLElement>) => {
-      if (!isDragging) return;
-
-      try {
-        if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-          e.currentTarget.releasePointerCapture(e.pointerId);
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
         }
-      } catch {
-        // Ignore pointer capture release error
-      }
 
-      setIsDragging(false);
-      triggerHaptic("light");
+        rafIdRef.current = requestAnimationFrame(() => {
+          if (!isDraggingRef.current) return;
 
-      // Save to localStorage
-      const allStored = loadStoredLayout();
-      allStored[id] = {
-        x: positionRef.current.x,
-        y: positionRef.current.y,
-        isCollapsed,
+          const tentative = {
+            x: panelStartPosRef.current.x + dx,
+            y: panelStartPosRef.current.y + dy,
+            isCollapsed: isCollapsedRef.current,
+          };
+
+          const panelEl = panelRef.current;
+          const width = panelEl?.offsetWidth || 360;
+          const height = panelEl?.offsetHeight || 200;
+
+          const clamped = clampPosition(
+            tentative,
+            { width, height },
+            { width: window.innerWidth, height: window.innerHeight },
+            boundsRef.current
+          );
+
+          positionRef.current = clamped;
+          setPosition(clamped);
+        });
       };
-      saveStoredLayout(allStored);
+
+      const onPointerUp = (upEvt: PointerEvent) => {
+        isDraggingRef.current = false;
+        setIsDragging(false);
+
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
+
+        window.removeEventListener("pointermove", onPointerMove);
+        window.removeEventListener("pointerup", onPointerUp);
+        window.removeEventListener("pointercancel", onPointerUp);
+
+        try {
+          if (handleEl.hasPointerCapture(pointerId)) {
+            handleEl.releasePointerCapture(pointerId);
+          }
+        } catch {
+          // Ignore pointer capture release error
+        }
+
+        triggerHaptic("light");
+
+        // Save final position to localStorage
+        const allStored = loadStoredLayout();
+        allStored[id] = {
+          x: positionRef.current.x,
+          y: positionRef.current.y,
+          isCollapsed: isCollapsedRef.current,
+        };
+        saveStoredLayout(allStored);
+      };
+
+      window.addEventListener("pointermove", onPointerMove, { passive: true });
+      window.addEventListener("pointerup", onPointerUp);
+      window.addEventListener("pointercancel", onPointerUp);
     },
-    [isDragging, id, isCollapsed]
+    [id]
   );
 
   const toggleCollapse = useCallback(() => {
     triggerHaptic("light");
     setIsCollapsed((prev) => {
       const next = !prev;
+      isCollapsedRef.current = next;
       const allStored = loadStoredLayout();
       allStored[id] = {
         x: positionRef.current.x,
@@ -201,11 +237,13 @@ export function useDraggablePanel({
 
   const resetPosition = useCallback(() => {
     triggerHaptic("light");
-    setPosition(defaultPosition);
+    const target = defaultPosRef.current;
+    setPosition(target);
+    positionRef.current = target;
     const allStored = loadStoredLayout();
-    allStored[id] = defaultPosition;
+    allStored[id] = target;
     saveStoredLayout(allStored);
-  }, [id, defaultPosition]);
+  }, [id]);
 
   return {
     panelRef,
@@ -215,9 +253,6 @@ export function useDraggablePanel({
     isHydrated,
     dragHandleProps: {
       onPointerDown: handlePointerDown,
-      onPointerMove: handlePointerMove,
-      onPointerUp: handlePointerUp,
-      onPointerCancel: handlePointerUp,
       style: { touchAction: "none" as const },
     },
     toggleCollapse,

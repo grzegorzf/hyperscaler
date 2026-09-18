@@ -49,9 +49,9 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
         left: 0,
         zIndex: isDragging ? 40 : 25,
       }}
-      className={`hidden md:flex flex-col transition-shadow duration-200 pointer-events-auto select-none ${
+      className={`hidden md:flex flex-col transition-shadow duration-150 pointer-events-auto select-none will-change-transform ${
         isDragging
-          ? "shadow-[0_24px_50px_rgba(0,0,0,0.9),0_0_24px_rgba(0,240,255,0.35)] will-change-transform scale-[1.01]"
+          ? "shadow-[0_24px_50px_rgba(0,0,0,0.9),0_0_24px_rgba(0,240,255,0.35)] ring-1 ring-cyan-400/40"
           : "shadow-2xl"
       } ${className}`}
     >
@@ -109,7 +109,7 @@ export const DraggablePanel: React.FC<DraggablePanelProps> = ({
 
       {/* 2. Panel Body (collapsible) */}
       {!isCollapsed && (
-        <div className="relative rounded-b-xl overflow-hidden animate-fadeIn">
+        <div className="relative rounded-b-xl overflow-hidden">
           {children}
         </div>
       )}

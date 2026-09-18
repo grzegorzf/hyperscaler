@@ -32,7 +32,15 @@ import {
 import { safeStartViewTransition } from "@/lib/browser/viewTransitions";
 import { useClusterBroadcast } from "@/hooks/useClusterBroadcast";
 import { DraggablePanel } from "@/components/DraggablePanel";
-import { clearStoredLayout } from "@/lib/browser/draggableMath";
+import { clearStoredLayout, PanelPosition } from "@/lib/browser/draggableMath";
+
+const DEFAULT_HUD_POSITIONS: Record<string, PanelPosition> = {
+  architectAdvisor: { x: 420, y: 68 },
+  telemetryHud: { x: 2500, y: 68 },
+  cloudCostHud: { x: 2500, y: 220 },
+  telemetrySparklines: { x: 2500, y: 490 },
+  controlDock: { x: 20, y: 300 },
+};
 
 export default function HyperscalerPage() {
   const {
@@ -411,7 +419,7 @@ export default function HyperscalerPage() {
         <DraggablePanel
           id="architect-advisor"
           title="Architect Advisory"
-          defaultPosition={{ x: 420, y: 68 }}
+          defaultPosition={DEFAULT_HUD_POSITIONS.architectAdvisor}
           className="w-[92%] max-w-xl"
         >
           <ArchitectAdvisorBanner insights={insights} />
@@ -421,7 +429,7 @@ export default function HyperscalerPage() {
         <DraggablePanel
           id="telemetry-hud"
           title="Telemetry Engine"
-          defaultPosition={{ x: 2500, y: 68 }}
+          defaultPosition={DEFAULT_HUD_POSITIONS.telemetryHud}
           className="w-full max-w-[420px]"
         >
           <TelemetryHUD state={state} history={throughputHistory} className="w-full" />
@@ -431,7 +439,7 @@ export default function HyperscalerPage() {
         <DraggablePanel
           id="cloud-cost-hud"
           title="Multi-Cloud Cost Model"
-          defaultPosition={{ x: 2500, y: 220 }}
+          defaultPosition={DEFAULT_HUD_POSITIONS.cloudCostHud}
           className="w-full max-w-[420px]"
         >
           <CloudCostHUD
@@ -447,7 +455,7 @@ export default function HyperscalerPage() {
         <DraggablePanel
           id="telemetry-sparklines"
           title="SRE SLO & Sparklines"
-          defaultPosition={{ x: 2500, y: 490 }}
+          defaultPosition={DEFAULT_HUD_POSITIONS.telemetrySparklines}
           className="w-full max-w-[420px]"
         >
           <TelemetrySparklines
@@ -461,7 +469,7 @@ export default function HyperscalerPage() {
         <DraggablePanel
           id="control-dock"
           title="Cluster Control Dock"
-          defaultPosition={{ x: 20, y: 300 }}
+          defaultPosition={DEFAULT_HUD_POSITIONS.controlDock}
           className="w-[340px] md:w-[320px]"
         >
           <div className="flex flex-col gap-2.5">
