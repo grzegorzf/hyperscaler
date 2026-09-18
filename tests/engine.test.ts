@@ -4,7 +4,7 @@ import {
   createInitialState,
   stepSimulation,
   applyScalingCommand,
-} from "../src/lib/simulation/engine.ts";
+} from "../src/lib/simulation/engine";
 
 describe("Simulation Engine", () => {
   it("initializes with balanced default cluster state", () => {

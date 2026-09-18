@@ -11,7 +11,7 @@ import {
   calculateConduitWidth,
   calculateComponentPeriod,
   BASE_TRAFFIC_RPS,
-} from "../src/lib/simulation/physics.ts";
+} from "../src/lib/simulation/physics";
 
 describe("Physics & Queuing Math", () => {
   it("calculates absorbed and origin traffic accurately", () => {

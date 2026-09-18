@@ -1,4 +1,4 @@
-import type { Point2D, SimulationLayout } from "./types.ts";
+import type { Point2D, SimulationLayout } from "./types";
 
 export function computeLayout(w: number, h: number): SimulationLayout {
   const tableCenterX = w * 0.50;

@@ -1,11 +1,11 @@
-import type { ClusterState, ScalingMode, ServerNode } from "./types.ts";
+import type { ClusterState, ScalingMode, ServerNode } from "./types";
 import {
   BASE_TRAFFIC_RPS,
   calculateOriginTraffic,
   calculateTargetPods,
   calculateTargetCores,
   calculateClusterMetrics,
-} from "./physics.ts";
+} from "./physics";
 
 export function createInitialState(): ClusterState {
   const initialTraffic = BASE_TRAFFIC_RPS;

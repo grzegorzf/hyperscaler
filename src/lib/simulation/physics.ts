@@ -1,4 +1,4 @@
-import type { ScalingMode, SystemHealth } from "./types.ts";
+import type { ScalingMode, SystemHealth } from "./types";
 
 export const BASE_TRAFFIC_RPS = 25000;
 export const POD_CAPACITY_RPS = 3000;

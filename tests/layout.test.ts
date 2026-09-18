@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { computeLayout, getComputeNodeTarget } from "../src/lib/simulation/layout.ts";
+import { computeLayout, getComputeNodeTarget } from "../src/lib/simulation/layout";
 
 describe("Layout & Topology Geometry", () => {
   it("computes left-to-right holographic topology flow", () => {
